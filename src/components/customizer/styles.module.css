@@ -1,0 +1,99 @@
+.customizer {
+  block-size: 100%;
+  inline-size: 400px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--mui-palette-background-paper);
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline-end: -400px;
+  box-shadow: none;
+  z-index: var(--customizer-z-index);
+  transition-property: inset-inline-end, box-shadow;
+  transition-duration: 300ms;
+  transition-timing-function: ease-in-out;
+
+  &.show {
+    inset-inline-end: 0 !important;
+    box-shadow: var(--mui-customShadows-xl);
+  }
+
+  &.smallScreen {
+    inline-size: 375px;
+    inset-inline-end: -375px;
+
+    &.show .toggler {
+      display: none;
+    }
+
+    .header,
+    .customizerBody {
+      padding-inline: 10px;
+    }
+  }
+}
+
+
+.itemLabel {
+  font-size: 13px;
+  line-height: 1.538462;
+  cursor: pointer;
+  color: var(--mui-palette-text-secondary);
+}
+
+.primaryColorWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  outline: 1px solid transparent;
+  block-size: 50px;
+  inline-size: 50px;
+  padding: 8px;
+  cursor: pointer;
+
+  &.active {
+    border-color: var(--primary-color);
+    outline: 1px solid var(--primary-color);
+  }
+}
+
+.primaryColor {
+  block-size: 100%;
+  inline-size: 100%;
+  border-radius: var(--border-radius);
+}
+
+.modeWrapper {
+  min-block-size: 54px;
+
+  &.active {
+    color: var(--primary-color);
+    background-color: var(--mui-palette-primary-lighterOpacity);
+  }
+}
+
+.hr {
+  border: 0;
+  border-block-start: 1px solid var(--border-color);
+}
+
+.colorPickerWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 16px; /* Add margin to separate from other elements */
+}
+
+.colorPicker {
+  width: 100%; /* Ensures the picker takes the full width */
+  max-width: 300px; /* You can set a max-width if needed */
+}
+
+.colorInput {
+  margin-top: 8px; /* Space between picker and input */
+  width: 100px; /* Set a fixed width or adjust as needed */
+  text-align: center;
+}
