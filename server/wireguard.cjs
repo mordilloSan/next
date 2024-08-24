@@ -178,10 +178,6 @@ server.post('/create', async (req, res) => {
         };
 
         const configFilePath = path.join(WG_CONFIG_DIR, `${name}.conf`);
-        
-        console.log('Writing config to:', configFilePath);
-        console.log('Config content:', serverConfig);
-
         await writeConfig({ filePath: configFilePath, config: serverConfig });
         
         // Create a WgConfig instance to manage the WireGuard interface
