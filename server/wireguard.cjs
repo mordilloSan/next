@@ -3,8 +3,7 @@ const fs = require('fs').promises;
 const dgram = require('dgram');
 const path = require('path');
 const { executeCommand, executeSudoCommand } = require('./executer.cjs');
-const { generateKeyPair, writeConfig, checkWgIsInstalled, WgConfig } = require('wireguard-tools');
-
+const { generateKeyPair, writeConfig, checkWgIsInstalled, WgConfig , makeSureDirExists, makeSureFileExists} = require('wireguard-tools');
 const WG_CONFIG_DIR = '/etc/wireguard';
 const server = express.Router();
 
@@ -164,8 +163,6 @@ server.post('/create', async (req, res) => {
     }
 
     try {
-        await ensureWireGuardInstalled();
-
         const { privateKey, publicKey } = await generateKeyPair();
         const serverConfig = {
             wgInterface: {
@@ -200,16 +197,9 @@ server.delete('/delete/:name', async (req, res) => {
     }
 
     try {
-        await ensureWireGuardInstalled();
-
-        // Create a WgConfig instance to manage the WireGuard interface
         const configFilePath = path.join(WG_CONFIG_DIR, `${name}.conf`);
         const wgConfig = new WgConfig({ filePath: configFilePath });
-
-        // Bring down the WireGuard interface using package's method
         await wgConfig.down();
-
-        // Remove the configuration file
         try {
             await fs.unlink(configFilePath);
             console.log(`Configuration file ${configFilePath} deleted.`);
@@ -222,6 +212,71 @@ server.delete('/delete/:name', async (req, res) => {
         console.error('Error deleting WireGuard interface:', error);
         res.status(500).json({ error: 'Failed to delete WireGuard interface.' });
     }
+});
+
+// API endpoint to enable/disable a WireGuard interface
+server.post('/toggle/:name', async (req, res) => {
+    const { name } = req.params;
+    const { status } = req.body;
+
+    if (!name || !status) {
+        return res.status(400).json({ error: 'Interface name and status are required.' });
+    }
+
+    if (status !== 'up' && status !== 'down') {
+        return res.status(400).json({ error: 'Status must be either "up" or "down".' });
+    }
+
+    const configFilePath = path.join(WG_CONFIG_DIR, `${name}.conf`);
+
+    try {
+        // Ensure the config file exists
+        await makeSureFileExists(configFilePath);
+
+        // Create a WgConfig instance to manage the WireGuard interface
+        const wgConfig = new WgConfig({ filePath: configFilePath });
+
+        if (status === 'up') {
+            await wgConfig.up();
+            return res.json({ message: `WireGuard interface ${name} is up.` });
+        } else if (status === 'down') {
+            await wgConfig.down();
+            return res.json({ message: `WireGuard interface ${name} is down.` });
+        }
+    } catch (error) {
+        console.error(`Error toggling WireGuard interface ${name}:`, error);
+        return res.status(500).json({ error: `Failed to ${status} WireGuard interface ${name}.` });
+    }
+});
+
+// API endpoint to check if WireGuard is installed
+server.get('/check', async (req, res) => {
+    let installedStatus = "not ok";
+    let directoryStatus = "not ok";
+    let errorCode = null;
+
+    try {
+        // Check if WireGuard is installed
+        await ensureWireGuardInstalled();
+        installedStatus = "ok";
+
+        try {
+            // Ensure the WireGuard directory exists
+            await makeSureDirExists(WG_CONFIG_DIR);
+            directoryStatus = "ok";
+        } catch (dirError) {
+            directoryStatus = "not ok";
+            errorCode = "DIR_NOT_FOUND"; // Directory not found error code
+        }
+    } catch (error) {
+        errorCode = "WIREGUARD_INSTALL_FAILED"; // WireGuard installation failed error code
+    }
+
+    res.json({
+        installed: installedStatus,
+        directory: directoryStatus,
+        errorCode: errorCode
+    });
 });
 
 module.exports = server;

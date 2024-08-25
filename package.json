@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node server.cjs",
+    "dev": "node --watch-path=./server server.cjs",
     "build": "next build",
     "start": "NODE_ENV=production node server.cjs",
     "lint": "next lint",

@@ -6,7 +6,7 @@ import { forwardRef } from "react";
 // Next Imports
 import Link from "next/link";
 
-export const RouterLink = forwardRef((props, ref) => {
+const RouterLink = forwardRef((props, ref) => {
   // Props
   const { href, className, ...other } = props;
 
@@ -16,3 +16,8 @@ export const RouterLink = forwardRef((props, ref) => {
     </Link>
   );
 });
+
+// Set the display name for the component
+RouterLink.displayName = "RouterLink";
+
+export default RouterLink;

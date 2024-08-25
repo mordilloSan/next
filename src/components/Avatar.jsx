@@ -38,4 +38,7 @@ const CustomAvatar = forwardRef((props, ref) => {
   return <Avatar color={color} skin={skin} ref={ref} {...rest} />;
 });
 
+// Set the display name for the component
+CustomAvatar.displayName = "CustomAvatar";
+
 export default CustomAvatar;

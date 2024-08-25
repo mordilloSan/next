@@ -28,6 +28,17 @@ const WireGuardDashboard = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Fetch WireGuard check status
+  const {
+    data: wireguardCheck,
+    isLoading: loadingWireguardCheck,
+    isError: errorWireguardCheck,
+    error: wireguardError,
+  } = useQuery({
+    queryKey: ["wireguardCheck"],
+    queryFn: () => customFetch(`/api/wireguard/check`),
+  });
+
   // Fetch the WireGuard interfaces
   const {
     data: WGinterfaces = [],
@@ -72,163 +83,191 @@ const WireGuardDashboard = () => {
   const handleDelete = async (interfaceName) => {
     try {
       const response = await fetch(`/api/wireguard/delete/${interfaceName}`, {
-        method: "DELETE", // Use DELETE method for removing resources
+        method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-  
-      // Refetch or update the UI as needed
+
       refetch();
     } catch (error) {
       console.error("Failed to delete WireGuard interface:", error);
     }
   };
-  
 
-  const handleToggleInterface = async (interfaceName, action) => {
+  const handleToggleInterface = async (interfaceName, status) => {
     try {
-      await fetch(`/api/wireguard/${action}`, {
+      if (status !== "up" && status !== "down") {
+        throw new Error('Action must be either "up" or "down".');
+      }
+
+      const response = await fetch(`/api/wireguard/toggle/${interfaceName}`, {
         method: "POST",
-        body: JSON.stringify({ name: interfaceName }),
+        body: JSON.stringify({ status }),
         headers: {
           "Content-Type": "application/json",
         },
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "Failed to toggle WireGuard interface.",
+        );
+      }
+
       refetch();
     } catch (error) {
-      console.error(`Failed to ${action} WireGuard interface:`, error);
+      console.error(`Failed to ${status} WireGuard interface:`, error);
     }
   };
 
   return (
     <>
-      <Typography variant="h4" component="h1" gutterBottom>
-        WireGuard Dashboard
-      </Typography>
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        mb={2}
+      >
+        <Typography variant="h4" component="h1">
+          Interface Dashboard
+        </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => setShowForm(true)}
+        >
+          Create New Interface
+        </Button>
+      </Box>
 
       {isLoading ? (
         <CircularProgress />
       ) : isError ? (
         <Typography color="error">Failed to fetch interfaces</Typography>
-      ) : WGinterfaces.length === 0 ? (
-        <div>
-          <Typography>No WireGuard interfaces found.</Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => setShowForm(true)}
-          >
-            Create New Interface
-          </Button>
-          {showForm && (
-            <Box mt={2}>
-              <TextField
-                label="Interface Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                fullWidth
-                margin="normal"
-              />
-              <TextField
-                label="Port"
-                type="number"
-                value={port}
-                onChange={(e) => setPort(e.target.value)}
-                fullWidth
-                margin="normal"
-              />
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleCreateInterface}
-                disabled={!name || !port || loading}
-              >
-                {loading ? "Creating..." : "Create Interface"}
-              </Button>
-              {error && <Alert severity="error">{error}</Alert>}
-            </Box>
-          )}
-        </div>
       ) : (
         <Grid container spacing={3}>
-          {WGinterfaces.map((iface) => (
-            <Grid item xs={12} md={6} lg={4} key={iface.name}>
-              <Card>
-                <CardContent>
-                  <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                  >
-                    <Typography variant="h6">{iface.name}</Typography>
-                    <Box>
-                      <IconButton
-                        sx={{
-                          color:
-                            iface.status === "active"
-                              ? settings.primaryColor
-                              : "gray",
-                        }}
-                        aria-label="Power"
+          {WGinterfaces.length === 0 ? (
+            <Typography>No WireGuard interfaces found.</Typography>
+          ) : (
+            WGinterfaces.map((iface) => {
+              const toggleAction = iface.status === "active" ? "down" : "up";
+
+              return (
+                <Grid item xs={12} md={6} lg={4} key={iface.name}>
+                  <Card>
+                    <CardContent>
+                      <Box
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
                       >
-                        <PowerSettingsNewIcon />
-                      </IconButton>
-                      <IconButton onClick={() => handleDelete(iface.name)}>
-                        <Delete />
-                      </IconButton>
-                      <IconButton
-                        onClick={() =>
-                          console.log("Edit action for", iface.name)
-                        }
-                      >
-                        <Edit />
-                      </IconButton>
-                    </Box>
-                  </Box>
-                  <Typography variant="body2" color="textSecondary">
-                    Status:{" "}
-                    <span
-                      style={{
-                        color:
-                          iface.status === "active"
-                            ? settings.primaryColor
-                            : "inherit",
-                      }}
-                    >
-                      {iface.status}
-                    </span>
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Clients: {iface.clients.length}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    tx/sec: 100 KB/s
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    rx/sec: 120 KB/s
-                  </Typography>
-                  <div>
-                    {iface.clients.map((client, index) => (
-                      <Typography
-                        key={index}
-                        variant="body2"
-                        color="textSecondary"
-                      >
-                        {client.publicKey} - {client.allowedIPs}
+                        <Typography variant="h6">{iface.name}</Typography>
+                        <Box>
+                          <IconButton
+                            sx={{
+                              color:
+                                iface.status === "active"
+                                  ? settings.primaryColor
+                                  : "gray",
+                            }}
+                            aria-label="Power"
+                            onClick={() =>
+                              handleToggleInterface(iface.name, toggleAction)
+                            }
+                          >
+                            <PowerSettingsNewIcon />
+                          </IconButton>
+                          <IconButton onClick={() => handleDelete(iface.name)}>
+                            <Delete />
+                          </IconButton>
+                          <IconButton
+                            onClick={() =>
+                              console.log("Edit action for", iface.name)
+                            }
+                          >
+                            <Edit />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                      <Typography variant="body2" color="textSecondary">
+                        Status:{" "}
+                        <span
+                          style={{
+                            color:
+                              iface.status === "active"
+                                ? settings.primaryColor
+                                : "inherit",
+                          }}
+                        >
+                          {iface.status}
+                        </span>
                       </Typography>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+                      <Typography variant="body2" color="textSecondary">
+                        Clients: {iface.clients.length}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        tx/sec: 100 KB/s
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        rx/sec: 120 KB/s
+                      </Typography>
+                      <div>
+                        {iface.clients.map((client, index) => (
+                          <Typography
+                            key={index}
+                            variant="body2"
+                            color="textSecondary"
+                          >
+                            {client.publicKey} - {client.allowedIPs}
+                          </Typography>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })
+          )}
         </Grid>
       )}
+
+      {/* Create New Interface Section */}
+      <Box mt={2}>
+        {showForm && (
+          <Box mt={2}>
+            <TextField
+              label="Interface Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="Port"
+              type="number"
+              value={port}
+              onChange={(e) => setPort(e.target.value)}
+              fullWidth
+              margin="normal"
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCreateInterface}
+              disabled={!name || !port || loading}
+            >
+              {loading ? "Creating..." : "Create Interface"}
+            </Button>
+            {error && <Alert severity="error">{error}</Alert>}
+          </Box>
+        )}
+      </Box>
     </>
   );
 };
