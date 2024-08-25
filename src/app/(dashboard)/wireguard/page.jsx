@@ -2,18 +2,7 @@
 
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-  CircularProgress,
-  Button,
-  TextField,
-  Box,
-  Alert,
-  IconButton,
-} from "@mui/material";
+import {  Grid,  Card,  CardContent,  Typography,  CircularProgress,  Button,  TextField,  Box,  Alert,  IconButton,} from "@mui/material";
 import { Delete, Edit } from "@mui/icons-material";
 import { useAuthenticatedFetch } from "@/utils/customFetch";
 import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";

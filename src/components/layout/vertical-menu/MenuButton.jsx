@@ -6,7 +6,7 @@ import classnames from "classnames";
 import { css } from "@emotion/react";
 
 // Component Imports
-import { RouterLink } from "@/components/RouterLink";
+import RouterLink  from "@/components/RouterLink";
 
 // Util Imports
 import { menuClasses } from "@/utils/menuClasses";

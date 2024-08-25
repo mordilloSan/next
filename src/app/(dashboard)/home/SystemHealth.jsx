@@ -6,7 +6,7 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import SecurityUpdateWarningIcon from "@mui/icons-material/SecurityUpdateWarning";
 import CardWithBorder from "@/components/cards/CardWithBorder";
-import { RouterLink } from "@/components/RouterLink";
+import RouterLink  from "@/components/RouterLink";
 import { useAuthenticatedFetch } from "@/utils/customFetch";
 
 const SystemHealth = () => {
