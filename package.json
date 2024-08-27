@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch-path=./server server.cjs",
-    "build": "next build",
+    "build": "ANALYZE=true next build",
     "start": "NODE_ENV=production node server.cjs",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
@@ -49,6 +49,7 @@
     "@iconify/json": "2.2.230",
     "@iconify/tools": "4.0.4",
     "@iconify/utils": "2.1.25",
+    "@next/bundle-analyzer": "^14.2.7",
     "autoprefixer": "10.4.19",
     "eslint": "8.57.0",
     "eslint-config-next": "14.2.5",

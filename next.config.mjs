@@ -6,10 +6,18 @@ const nextConfig = {
         source: '/',
         destination: '/home',
         permanent: true,
-        locale: false
-      }
-    ]
-  }
-}
+        locale: false,
+      },
+    ];
+  },
+};
 
-export default nextConfig
+import withBundleAnalyzer from '@next/bundle-analyzer';
+
+// Configure the bundle analyzer
+const bundleAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+// Export the configuration wrapped with bundle analyzer
+export default bundleAnalyzer(nextConfig);
