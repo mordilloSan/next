@@ -1,24 +1,22 @@
-const util = require('util');
-const { exec: childExec } = require('child_process');
-const execute = util.promisify(childExec);
+const { exec } = require('child_process');
 
 /**
- * exec function with options.
+ * Execute function with options.
  * Allows handling of stdout, stderr, and exit events with callbacks.
  */
 
-const exec = async (command, options = {}) => {
+const execCommand = async (command, options = {}) => {
     const { onData, onError, onClose, ...execOptions } = options;
 
-    const promise = execute(command, execOptions);
-    const child = promise.child;
+    // Create a new Promise using the native exec
+    const child = exec(command, execOptions);
 
     // Attach listeners for stdout and stderr if provided
-    if (onData && typeof onData === 'function') {
+    if (onData && typeof onData === 'function' && child.stdout) {
         child.stdout.on('data', (data) => onData(data));
     }
 
-    if (onError && typeof onError === 'function') {
+    if (onError && typeof onError === 'function' && child.stderr) {
         child.stderr.on('data', (data) => onError(data));
     }
 
@@ -26,18 +24,37 @@ const exec = async (command, options = {}) => {
         child.on('close', (code) => onClose(code));
     }
 
-    // Await the completion of the command
-    const { stdout, stderr } = await promise;
+    // Use Promise to handle exec result
+    return new Promise((resolve, reject) => {
+        let stdout = '';
+        let stderr = '';
 
-    if (stderr) {
-        throw new Error(stderr);
-    }
+        if (child.stdout) {
+            child.stdout.on('data', (data) => {
+                stdout += data;
+            });
+        }
 
-    return stdout;
+        if (child.stderr) {
+            child.stderr.on('data', (data) => {
+                stderr += data;
+            });
+        }
+
+        child.on('close', (code) => {
+            if (code !== 0) {
+                reject(new Error(stderr));
+            } else {
+                resolve(stdout);
+            }
+        });
+
+        child.on('error', (err) => reject(err));
+    });
 };
 
 const executeCommand = (command, options = {}) => {
-    return exec(command, { maxBuffer: 1024 * 1024 * 10, ...options });
+    return execCommand(command, { maxBuffer: 1024 * 1024 * 10, ...options });
 };
 
 const executeSudoCommand = (command, password) => {
