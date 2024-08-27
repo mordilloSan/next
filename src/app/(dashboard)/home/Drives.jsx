@@ -14,7 +14,7 @@ const DriveInfo = () => {
   const { data: driveInfo } = useQuery({
     queryKey: ["drives"],
     queryFn: () =>
-      customFetch("https://localhost:3000/api/systeminfo/diskLayout"),
+      customFetch("/api/systeminfo/diskLayout"),
     refetchInterval: 50000,
   });
 

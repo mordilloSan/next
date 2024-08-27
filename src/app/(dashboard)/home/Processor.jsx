@@ -12,7 +12,7 @@ const Processor = () => {
   const customFetch = useAuthenticatedFetch();
   const { data: CPUInfo } = useQuery({
     queryKey: ["CPUInfo"],
-    queryFn: () => customFetch("https://localhost:3000/api/systeminfo/cpu"),
+    queryFn: () => customFetch("/api/systeminfo/cpu"),
     refetchInterval: 2000,
   });
 

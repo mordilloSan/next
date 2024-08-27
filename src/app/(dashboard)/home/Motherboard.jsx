@@ -13,7 +13,7 @@ const MotherBoardInfo = () => {
   const { data: motherboardInfo } = useQuery({
     queryKey: ["motherboardInfo"],
     queryFn: () =>
-      customFetch("https://localhost:3000/api/systeminfo/baseboard"),
+      customFetch("/api/systeminfo/baseboard"),
     refetchInterval: 50000,
   });
 

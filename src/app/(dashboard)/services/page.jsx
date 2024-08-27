@@ -4,16 +4,14 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Box } from "@mui/material";
 import DataTable from "@/components/tables/GenericTable";
-import LoadingIndicator from "@/components/LoadingIndicator";
 import isEqualWith from "lodash/isEqualWith";
 import { useAuthenticatedFetch } from "@/utils/customFetch";
 
 function Services() {
   const customFetch = useAuthenticatedFetch();
-  const { data: ServiceInfo, isLoading: loadingSystemInfo } = useQuery({
+  const { data: ServiceInfo } = useQuery({
     queryKey: ["serviceInfo"],
-    queryFn: () =>
-      customFetch("https://localhost:3000/api/system-status/services"),
+    queryFn: () => customFetch("/api/system-status/services"),
     refetchInterval: 50000,
   });
 
@@ -63,20 +61,6 @@ function Services() {
       }
     }
   }, [ServiceInfo, columns]);
-
-  if (loadingSystemInfo) {
-    return (
-      <Box
-        mb={1.5}
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        height="100%"
-      >
-        <LoadingIndicator />
-      </Box>
-    );
-  }
 
   return (
     <Box>

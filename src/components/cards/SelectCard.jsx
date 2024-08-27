@@ -1,17 +1,7 @@
 import { Select, MenuItem, FormControl, Typography } from "@mui/material";
 import CardRoot from "@/components/cards/CardRoot";
 
-const SelectCard = ({
-  title,
-  icon: Icon,
-  iconProps,
-  icon_text,
-  Content,
-  options,
-  onSelect,
-  selectedOption,
-  selectedOptionLabel,
-}) => {
+const SelectCard = ({ title, icon: Icon, iconProps, icon_text, Content, options, onSelect, selectedOption, selectedOptionLabel, }) => {
   const handleSelectionChange = (event) => {
     if (onSelect) {
       onSelect(event);
@@ -27,7 +17,8 @@ const SelectCard = ({
       }}
     >
       <Select
-        id="select-label"
+        id="drive-select"
+        name="drive"
         value={selectedOption}
         onChange={handleSelectionChange}
         displayEmpty

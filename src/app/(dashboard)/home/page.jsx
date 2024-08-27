@@ -1,14 +1,12 @@
 import React from "react";
 import { Grid } from "@mui/material";
-import dynamic from "next/dynamic";
-
-const Motherboard = dynamic(() => import("./Motherboard"), { ssr: true });
-const Memory = dynamic(() => import("./Memory"), { ssr: true });
-const SystemHealth = dynamic(() => import("./SystemHealth"), { ssr: true });
-const Drives = dynamic(() => import("./Drives"), { ssr: true });
-const FileSystem = dynamic(() => import("./FileSystem"), { ssr: true });
-const Processor = dynamic(() => import("./Processor"), { ssr: true });
-const Network = dynamic(() => import("./Network"), { ssr: true });
+import Motherboard from "./Motherboard";
+import Memory from "./Memory";
+import SystemHealth from "./SystemHealth";
+import Drives from "./Drives";
+import FileSystem from "./FileSystem";
+import Processor from "./Processor";
+import Network from "./Network";
 
 const Dashboard = () => {
   return (

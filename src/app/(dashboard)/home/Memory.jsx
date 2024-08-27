@@ -15,7 +15,7 @@ const MemoryUsage = () => {
   const customFetch = useAuthenticatedFetch();
   const { data: memoryData } = useQuery({
     queryKey: ["memoryInfo"],
-    queryFn: () => customFetch("https://localhost:3000/api/systeminfo/mem"),
+    queryFn: () => customFetch("/api/systeminfo/mem"),
     refetchInterval: 2000,
   });
 

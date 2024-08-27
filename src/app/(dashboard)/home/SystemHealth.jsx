@@ -15,20 +15,20 @@ const SystemHealth = () => {
 
   const { data: SystemHealth } = useQuery({
     queryKey: ["SystemHealth"],
-    queryFn: () => customFetch("https://localhost:3000/api/updates/status"),
+    queryFn: () => customFetch("/api/updates/status"),
     refetchInterval: 50000,
   });
 
   const { data: systemStatus } = useQuery({
     queryKey: ["SystemStatus"],
     queryFn: () =>
-      customFetch("https://localhost:3000/api/system-status/status"),
+      customFetch("/api/system-status/status"),
     refetchInterval: 50000,
   });
 
   const { data: distroInfo } = useQuery({
     queryKey: ["DistroInfo"],
-    queryFn: () => customFetch("https://localhost:3000/api/systeminfo/os"),
+    queryFn: () => customFetch("/api/systeminfo/os"),
     refetchInterval: 50000,
   });
 

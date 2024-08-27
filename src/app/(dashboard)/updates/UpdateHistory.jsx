@@ -15,7 +15,7 @@ function UpdateHistoryCard() {
     const fetchData = async () => {
       try {
         const response = await fetch(
-          "https://localhost:3000/api/updates/update-history",
+          "/api/updates/update-history",
         );
         const data = await response.json();
 

@@ -10,7 +10,7 @@ const FsInfoCard = () => {
   const customFetch = useAuthenticatedFetch();
   const { data: fsInfo } = useQuery({
     queryKey: ["fsInfo"],
-    queryFn: () => customFetch("https://localhost:3000/api/filesystems"),
+    queryFn: () => customFetch("/api/filesystems"),
     refetchInterval: 2000,
   });
 

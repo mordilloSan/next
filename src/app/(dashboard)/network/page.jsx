@@ -7,13 +7,11 @@ import { formatDataRate } from "@/utils/formatter";
 import { useAuthenticatedFetch } from "@/utils/customFetch";
 import RouterLink  from "@/components/RouterLink";
 
-const endpointBase = "https://localhost:3000/api";
-
 const NetworkStatsTable = () => {
   const customFetch = useAuthenticatedFetch();
-  const { data: networkInfo, isLoading: loadingNetworkInfo } = useQuery({
+  const { data: networkInfo } = useQuery({
     queryKey: ["networkInfo"],
-    queryFn: () => customFetch(`${endpointBase}/network`),
+    queryFn: () => customFetch(`/api/network`),
     refetchInterval: 1000,
   });
 

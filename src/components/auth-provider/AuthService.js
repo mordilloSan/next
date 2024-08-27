@@ -2,7 +2,7 @@
 
 export const logout = async () => {
   try {
-    const response = await fetch("https://localhost:3000/api/logout", {
+    const response = await fetch("/api/logout", {
       method: "GET",
       credentials: "include",
     });
@@ -25,7 +25,7 @@ export const logout = async () => {
 export const login = async (requestDetails) => {
   try {
     const response = await fetch(
-      "https://localhost:3000/api/login",
+      "/api/login",
       requestDetails,
     );
 

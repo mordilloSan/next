@@ -7,7 +7,7 @@ import CollapsibleTable from "@/components/tables/CollapsibleTable";
 import LoadingIndicator from "@/components/LoadingIndicator";
 import { useAuthenticatedFetch } from "@/utils/customFetch";
 
-const endpointBase = "https://localhost:3000/api";
+const endpointBase = "/api";
 
 const UpdateStatus = () => {
   const [isUpdating, setIsUpdating] = useState(false);

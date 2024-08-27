@@ -11,10 +11,10 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import LoadingIndicator from "@/components/LoadingIndicator"
 
 function CollapsibleRow({ row, columns, renderCollapseContent }) {
   const [open, setOpen] = useState(false);
@@ -60,7 +60,7 @@ CollapsibleRow.propTypes = {
       field: PropTypes.string.isRequired,
       headerName: PropTypes.string.isRequired,
       align: PropTypes.string,
-    }),
+    })
   ).isRequired,
   renderCollapseContent: PropTypes.func.isRequired,
 };
@@ -88,14 +88,22 @@ export default function CollapsibleTable({
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.map((row, index) => (
-              <CollapsibleRow
-                key={index}
-                row={row}
-                columns={columns}
-                renderCollapseContent={renderCollapseContent}
-              />
-            ))}
+            {rows.length > 0 ? (
+              rows.map((row, index) => (
+                <CollapsibleRow
+                  key={index}
+                  row={row}
+                  columns={columns}
+                  renderCollapseContent={renderCollapseContent}
+                />
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length + 1} align="center">
+                  <LoadingIndicator />
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </TableContainer>
@@ -110,7 +118,12 @@ CollapsibleTable.propTypes = {
       field: PropTypes.string.isRequired,
       headerName: PropTypes.string.isRequired,
       align: PropTypes.string,
-    }),
+    })
   ).isRequired,
   renderCollapseContent: PropTypes.func.isRequired,
+  loading: PropTypes.bool,
+};
+
+CollapsibleTable.defaultProps = {
+  loading: false,
 };

@@ -8,6 +8,8 @@ const routes = [
   { path: "/accounts", label: "Accounts", icon: "mdi:account-outline" },
   { path: "/shares", label: "Shares", icon: "material-symbols:share-outline" },
   { path: "/wireguard", label: "Wireguard", icon: "cib:wireguard" },
+  { path: "/hardware", label: "Hardware", icon: "eos-icons:hardware-circuit" },
+  { path: "/filebrowser", label: "Navigator", icon: "arcticons:anexplorer" },
   // Add more routes here as needed
 ];
 
