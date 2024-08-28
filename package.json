@@ -27,7 +27,6 @@
     "apexcharts": "^3.52.0",
     "authenticate-pam": "^1.0.5",
     "classnames": "2.5.1",
-    "execa": "^9.3.1",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
     "lodash": "^4.17.21",
@@ -41,8 +40,6 @@
     "react-dom": "18.3.1",
     "react-perfect-scrollbar": "1.5.8",
     "react-use": "17.5.1",
-    "socket.io": "^4.7.5",
-    "socket.io-client": "^4.7.5",
     "systeminformation": "^5.23.4",
     "wireguard-tools": "^0.1.0"
   },
