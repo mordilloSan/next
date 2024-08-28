@@ -45,7 +45,7 @@ const UpdateStatus = () => {
           const errorData = await response.json();
           throw new Error(
             errorData.message ||
-            `Failed to update package: ${response.statusText}`,
+              `Failed to update package: ${response.statusText}`,
           );
         }
 
@@ -147,12 +147,26 @@ const UpdateStatus = () => {
           </Typography>
         </Box>
       )}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", px: 2, pb: 1, }}      >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          px: 2,
+          pb: 1,
+        }}
+      >
         <Typography variant="h4" sx={{ lineHeight: 1.2 }}>
           Status
         </Typography>
         {updateInfo && updateInfo.updates.length > 0 && (
-          <Button variant="contained" color="primary" onClick={handleUpdateAll} disabled={isUpdating} sx={{ ml: 2, alignSelf: "center" }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleUpdateAll}
+            disabled={isUpdating}
+            sx={{ ml: 2, alignSelf: "center" }}
+          >
             {isUpdating ? `Updating` : "Install All Updates"}
           </Button>
         )}
@@ -175,7 +189,10 @@ const UpdateStatus = () => {
         <Box sx={{ padding: 2 }}>
           <Card>
             <Box sx={{ display: "flex", alignItems: "center", py: 5 }}>
-              <CheckCircleIcon color="success" sx={{ ml: 9, mr: 8, fontSize: 22 }} />
+              <CheckCircleIcon
+                color="success"
+                sx={{ ml: 9, mr: 8, fontSize: 22 }}
+              />
               <Typography variant="body1" fontSize={15}>
                 System is up to date
               </Typography>

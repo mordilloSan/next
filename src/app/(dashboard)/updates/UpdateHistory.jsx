@@ -14,9 +14,7 @@ function UpdateHistoryCard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(
-          "/api/updates/update-history",
-        );
+        const response = await fetch("/api/updates/update-history");
         const data = await response.json();
 
         const formattedData = data.map((item) => ({

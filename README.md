@@ -29,3 +29,4 @@ detect a system restart needed
 change in the update part from a circular progress, to a progress bar
 Implement dbus-next!!!!! This is big....
 Implement websocket!!!!!
+Custom fetch for post and delete

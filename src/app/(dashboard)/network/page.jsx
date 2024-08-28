@@ -5,7 +5,7 @@ import React from "react";
 import GenericTable from "@/components/tables/GenericTable";
 import { formatDataRate } from "@/utils/formatter";
 import { useAuthenticatedFetch } from "@/utils/customFetch";
-import RouterLink  from "@/components/RouterLink";
+import RouterLink from "@/components/RouterLink";
 
 const NetworkStatsTable = () => {
   const customFetch = useAuthenticatedFetch();

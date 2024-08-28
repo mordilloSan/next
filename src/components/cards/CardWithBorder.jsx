@@ -44,10 +44,10 @@ const CardWithBorder = (props) => {
       sx={{
         height: stats2
           ? {
-            xs: 340,
-            sm: 340,
-            xl: cardHeight,
-          }
+              xs: 340,
+              sm: 340,
+              xl: cardHeight,
+            }
           : cardHeight,
         m: 1,
         display: "flex",
@@ -87,8 +87,12 @@ const CardWithBorder = (props) => {
               alignItems: { xs: "center", sm: "center", xl: "flex-start" },
             }}
           >
-            <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>{stats}</Box>
-            <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>{stats2}</Box>
+            <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
+              {stats}
+            </Box>
+            <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
+              {stats2}
+            </Box>
           </Box>
         ) : (
           <Box sx={{ mt: 2 }}>{stats}</Box>

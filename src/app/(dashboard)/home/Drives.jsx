@@ -13,8 +13,7 @@ const DriveInfo = () => {
   const [selectedDrive, setSelectedDrive] = useState(null);
   const { data: driveInfo } = useQuery({
     queryKey: ["drives"],
-    queryFn: () =>
-      customFetch("/api/systeminfo/diskLayout"),
+    queryFn: () => customFetch("/api/systeminfo/diskLayout"),
     refetchInterval: 50000,
   });
 

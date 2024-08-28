@@ -12,14 +12,16 @@ import CreateInterfaceDialog from "./CreateInterfaceDialog";
 const WireGuardDashboard = () => {
   const { settings } = useSettings();
   const customFetch = useAuthenticatedFetch();
-  const [name, setName] = useState("");
-  const [port, setPort] = useState("");
+  const [name, setName] = useState("wg0");
+  const [port, setPort] = useState("51820");
+  const [serverAddress, setServerAddress] = useState("10.13.14.1");
+  const [peers, setPeers] = useState("1");
   const [showDialog, setShowDialog] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Fetch WireGuard check status
-  const { data: wireguardCheck, isLoading: loadingWireguardCheck, isError: errorWireguardCheck, error: wireguardError, } = useQuery({
+  const { data: wireguardCheck, isLoading: loadingWireguardCheck, isError: errorWireguardCheck } = useQuery({
     queryKey: ["wireguardCheck"],
     queryFn: () => customFetch(`/api/wireguard/check`),
   });
@@ -38,7 +40,7 @@ const WireGuardDashboard = () => {
     try {
       const response = await fetch("/api/wireguard/create", {
         method: "POST",
-        body: JSON.stringify({ name, port }),
+        body: JSON.stringify({ name, port, serverAddress, peers }),
         headers: {
           "Content-Type": "application/json",
         },
@@ -50,6 +52,8 @@ const WireGuardDashboard = () => {
 
       setName("");
       setPort("");
+      setServerAddress("");
+      setPeers("");
       setShowDialog(false); // Close dialog on success
       refetch(); // Refetch the interfaces to get the updated list
     } catch (error) {
@@ -68,9 +72,13 @@ const WireGuardDashboard = () => {
           "Content-Type": "application/json",
         },
       });
-      if (!response.ok) { throw new Error(`HTTP error! Status: ${response.status}`); }
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
       refetch();
-    } catch (error) { console.error("Failed to delete WireGuard interface:", error); }
+    } catch (error) {
+      console.error("Failed to delete WireGuard interface:", error);
+    }
   };
 
   const handleToggleInterface = async (interfaceName, status) => {
@@ -102,11 +110,20 @@ const WireGuardDashboard = () => {
 
   return (
     <>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        mb={2}
+      >
         <Typography variant="h4" component="h1">
           Interface Dashboard
         </Typography>
-        <Button variant="contained" color="primary" onClick={() => setShowDialog(true)}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => setShowDialog(true)}
+        >
           Create New Interface
         </Button>
       </Box>
@@ -127,27 +144,49 @@ const WireGuardDashboard = () => {
                 <Grid item xs={12} md={6} lg={4} key={iface.name}>
                   <Card>
                     <CardContent>
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Box
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
                         <Typography variant="h6">{iface.name}</Typography>
                         <Box>
                           <IconButton
-                            sx={{ color: iface.status === "active" ? settings.primaryColor : "gray", }}
+                            sx={{
+                              color:
+                                iface.status === "active"
+                                  ? settings.primaryColor
+                                  : "gray",
+                            }}
                             aria-label="Power"
-                            onClick={() => handleToggleInterface(iface.name, toggleAction)}
+                            onClick={() =>
+                              handleToggleInterface(iface.name, toggleAction)
+                            }
                           >
                             <PowerSettingsNewIcon />
                           </IconButton>
                           <IconButton onClick={() => handleDelete(iface.name)}>
                             <Delete />
                           </IconButton>
-                          <IconButton onClick={() => console.log("Edit action for", iface.name)}>
+                          <IconButton
+                            onClick={() =>
+                              console.log("Edit action for", iface.name)
+                            }
+                          >
                             <Edit />
                           </IconButton>
                         </Box>
                       </Box>
                       <Typography variant="body2" color="textSecondary">
                         Status:{" "}
-                        <span style={{ color: iface.status === "active" ? settings.primaryColor : "inherit" }}>
+                        <span
+                          style={{
+                            color:
+                              iface.status === "active"
+                                ? settings.primaryColor
+                                : "inherit",
+                          }}
+                        >
                           {iface.status}
                         </span>
                       </Typography>
@@ -162,7 +201,11 @@ const WireGuardDashboard = () => {
                       </Typography>
                       <div>
                         {iface.clients.map((client, index) => (
-                          <Typography key={index} variant="body2" color="textSecondary"                          >
+                          <Typography
+                            key={index}
+                            variant="body2"
+                            color="textSecondary"
+                          >
                             {client.publicKey} - {client.allowedIPs}
                           </Typography>
                         ))}
@@ -187,6 +230,10 @@ const WireGuardDashboard = () => {
         setName={setName}
         port={port}
         setPort={setPort}
+        serverAddress={serverAddress}
+        setServerAddress={setServerAddress}
+        peers={peers}
+        setPeers={setPeers}
       />
     </>
   );

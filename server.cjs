@@ -12,6 +12,7 @@ const storageRoutes = require('./server/storage.cjs');
 const networkRoutes = require('./server/network.cjs');
 const systemRoutes = require('./server/systemstatus.cjs');
 const systemInfoRoutes = require('./server/systeminfo.cjs');
+const powerRoutes = require('./server/power.cjs');
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -52,14 +53,13 @@ app.prepare().then(() => {
   server.use("/api", loginRoutes);
   server.use("/api/updates", updateRoutes);
   server.use("/api", storageRoutes);
-  server.use("/api", networkRoutes); // Network routes using session
+  server.use("/api", networkRoutes);
   server.use("/api/system-status", systemRoutes);
   server.use('/api/systeminfo', systemInfoRoutes);
+  server.use('/api', powerRoutes);
 
   // Handle all other routes with Next.js
-  server.all('*', (req, res) => {
-    return handle(req, res);
-  });
+  server.all('*', (req, res) => { return handle(req, res); });
 
   // Start server with HTTPS
   pem.createCertificate({ days: 365, selfSigned: true }, (err, keys) => {

@@ -1,6 +1,17 @@
 import React from "react";
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Card, CardContent, Typography, } from "@mui/material";
-import LoadingIndicator from "@/components/LoadingIndicator"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Box,
+  Card,
+  CardContent,
+  Typography,
+} from "@mui/material";
+import LoadingIndicator from "@/components/LoadingIndicator";
 
 const GenericTable = ({ rows = [], columns = [], title }) => {
   return (

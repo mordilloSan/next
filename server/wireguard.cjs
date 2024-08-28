@@ -156,29 +156,26 @@ server.get('/interfaces', async (req, res) => {
 
 // API endpoint to create a WireGuard interface
 server.post('/create', async (req, res) => {
-    const { name, port } = req.body;
+    const { name, port, serverAddress } = req.body;
 
-    if (!name || !port) {
+    if (!name || !port || !serverAddress) {
         return res.status(400).json({ error: 'Interface name and port are required.' });
     }
 
     try {
-        const { privateKey, publicKey } = await generateKeyPair();
-        const serverConfig = {
+        const configFilePath = path.join(WG_CONFIG_DIR, `${name}.conf`);
+        const serverConfig = new WgConfig({
             wgInterface: {
-                privateKey,
                 listenPort: port,
-                address: ['10.7.0.1/24'],  // Adjust this as needed
+                address: serverAddress,  // Adjust this as needed
                 saveConfig: true,
             },
-            peers: []
-        };
+            filePath: configFilePath
+        });
 
-        const configFilePath = path.join(WG_CONFIG_DIR, `${name}.conf`);
-        await writeConfig({ filePath: configFilePath, config: serverConfig });
-        
-        // Create a WgConfig instance to manage the WireGuard interface
-        const wgConfig = new WgConfig({ filePath: configFilePath });
+        const { publicKey, preSharedKey, privateKey } = await wgConfig.generateKeys({ preSharedKey: true })
+
+        await writeConfig({ filePath: configFilePath, config: serverConfig });      
         await wgConfig.up();
 
         res.json({ message: `WireGuard interface ${name} created successfully.` });

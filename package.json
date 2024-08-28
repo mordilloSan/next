@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch-path=./server server.cjs",
-    "build": "ANALYZE=true next build",
+    "build": "next build",
+    "analyze": "ANALYZE=true next build",
     "start": "NODE_ENV=production node server.cjs",
     "lint": "next lint",
     "lint:fix": "next lint --fix",

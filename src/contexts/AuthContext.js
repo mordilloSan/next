@@ -1,10 +1,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  logout as logoutService,
-  login as loginService,
-} from "../components/auth-provider/AuthService";
+import {  logout as logoutService,  login as loginService,} from "../components/auth-provider/AuthService";
 
 const AuthContext = createContext();
 
@@ -45,7 +42,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    try {
+    try { 
       setIsAuthenticated(false);
       await logoutService();
       router.push("/login");

@@ -24,10 +24,7 @@ export const logout = async () => {
 
 export const login = async (requestDetails) => {
   try {
-    const response = await fetch(
-      "/api/login",
-      requestDetails,
-    );
+    const response = await fetch("/api/login", requestDetails);
 
     if (response.ok) {
       const token = await response.text();
