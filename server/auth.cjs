@@ -13,10 +13,14 @@ function isAuthenticated(req, res, next) {
                 if (err) {
                     console.error("Error destroying session:", err);
                 }
+                res.clearCookie('connect.sid');
+                res.clearCookie('token');
                 res.status(401).send("Unauthorized");
                 console.log("Unauthorized access blocked and session destroyed");
             });
         } else {
+            res.clearCookie('connect.sid');
+            res.clearCookie('token');
             res.status(401).send("Unauthorized");
             console.log("Unauthorized access blocked");
         }

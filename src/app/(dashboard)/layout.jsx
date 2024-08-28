@@ -7,7 +7,7 @@ import VerticalLayout from "@/components/layout/core/VerticalLayout";
 
 // Component Imports
 import Providers from "@/components/layout/vertical-menu/Providers";
-import Navigation from "@/components/layout/NavBar/Navigation";
+import Navigation from "@/components/layout/vertical-menu/Navigation";
 import Navbar from "@/components/layout/NavBar/Navbar";
 import ScrollToTop from "@/components/scroll-to-top";
 import Customizer from "@/components/customizer";

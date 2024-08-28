@@ -14,11 +14,11 @@ import VerticalNav, {
   NavHeader,
   NavCollapseIcons,
 } from "@/theme/styles/vertical";
-import VerticalMenu from "../vertical-menu/VerticalMenu";
-import Logo from "../vertical-menu/Logo";
+import VerticalMenu from "./VerticalMenu";
+import Logo from "./Logo";
 
 // Hook Imports
-import useVerticalNav from "./useVerticalNav";
+import useVerticalNav from "../NavBar/useVerticalNav";
 import { useSettings } from "@/hooks/useSettings";
 
 // Style Imports

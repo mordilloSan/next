@@ -1,13 +1,11 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
-import { Typography, Box, Button, CircularProgress, Card } from "@mui/material";
+import { Typography, Box, Button, LinearProgress, Card } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CollapsibleTable from "@/components/tables/CollapsibleTable";
-import LoadingIndicator from "@/components/LoadingIndicator";
 import { useAuthenticatedFetch } from "@/utils/customFetch";
-
-const endpointBase = "/api";
+import LoadingIndicator from "@/components/LoadingIndicator";
 
 const UpdateStatus = () => {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -18,7 +16,7 @@ const UpdateStatus = () => {
 
   const { data: updateInfo, isLoading: loadingSystemInfo } = useQuery({
     queryKey: ["updateInfo"],
-    queryFn: () => customFetch(`${endpointBase}/updates/status`),
+    queryFn: () => customFetch(`/api/updates/status`),
     refetchInterval: 50000,
     enabled: !isUpdating, // Disable the query while updating
   });
@@ -28,7 +26,7 @@ const UpdateStatus = () => {
       const controller = new AbortController();
 
       try {
-        const response = await fetch(`${endpointBase}/updates/update-package`, {
+        const response = await fetch(`/api/updates/update-package`, {
           method: "POST",
           body: JSON.stringify({ packageName }),
           headers: {
@@ -47,7 +45,7 @@ const UpdateStatus = () => {
           const errorData = await response.json();
           throw new Error(
             errorData.message ||
-              `Failed to update package: ${response.statusText}`,
+            `Failed to update package: ${response.statusText}`,
           );
         }
 
@@ -139,39 +137,23 @@ const UpdateStatus = () => {
     <Box>
       {/* Progress Bar and Current Package Display at the Top */}
       {isUpdating && (
-        <Box sx={{ mb: 2, textAlign: "center" }}>
+        <Box sx={{ textAlign: "center" }}>
           <Typography variant="h6" gutterBottom>
             Updating {currentPackage}...
           </Typography>
-          <CircularProgress variant="determinate" value={updateProgress} />
+          <LinearProgress variant="determinate" value={updateProgress} />
           <Typography variant="body2" sx={{ mt: 1 }}>
             {`${Math.round(updateProgress)}% completed`}
           </Typography>
         </Box>
       )}
-
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          px: 2,
-          pb: 1,
-        }}
-      >
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", px: 2, pb: 1, }}      >
         <Typography variant="h4" sx={{ lineHeight: 1.2 }}>
           Status
         </Typography>
         {updateInfo && updateInfo.updates.length > 0 && (
-          <Button
-            variant="contained"
-            color="info"
-            onClick={handleUpdateAll}
-            disabled={isUpdating}
-            startIcon={isUpdating ? <CircularProgress size={20} /> : null}
-            sx={{ ml: 2, alignSelf: "center" }}
-          >
-            {isUpdating ? `Updating ${currentPackage}` : "Install All Updates"}
+          <Button variant="contained" color="primary" onClick={handleUpdateAll} disabled={isUpdating} sx={{ ml: 2, alignSelf: "center" }}>
+            {isUpdating ? `Updating` : "Install All Updates"}
           </Button>
         )}
       </Box>
@@ -193,10 +175,7 @@ const UpdateStatus = () => {
         <Box sx={{ padding: 2 }}>
           <Card>
             <Box sx={{ display: "flex", alignItems: "center", py: 5 }}>
-              <CheckCircleIcon
-                color="success"
-                sx={{ ml: 9, mr: 8, fontSize: 22 }}
-              />
+              <CheckCircleIcon color="success" sx={{ ml: 9, mr: 8, fontSize: 22 }} />
               <Typography variant="body1" fontSize={15}>
                 System is up to date
               </Typography>
