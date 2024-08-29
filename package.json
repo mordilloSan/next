@@ -1,6 +1,6 @@
 {
   "name": "LSMT",
-  "version": "1.00",
+  "version": "0.20",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -41,8 +41,7 @@
     "react-dom": "18.3.1",
     "react-perfect-scrollbar": "1.5.8",
     "react-use": "17.5.1",
-    "systeminformation": "^5.23.4",
-    "wireguard-tools": "^0.1.0"
+    "systeminformation": "^5.23.4"
   },
   "devDependencies": {
     "@iconify/json": "2.2.230",

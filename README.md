@@ -17,6 +17,7 @@ oneiric (and any newer, eg. Debian 7 or Ubuntu 12.04): apt-get install libreadli
 FOR WIREGUARD
 
 wireguard
+cmake (testing for wireguard C++ manager - https://github.com/Sirherobrine23/Wireguard-tools.js.git)
 
 FOR PACKAGE UPGRADE
 

@@ -12,7 +12,7 @@ import CreateInterfaceDialog from "./CreateInterfaceDialog";
 const WireGuardDashboard = () => {
   const { settings } = useSettings();
   const customFetch = useAuthenticatedFetch();
-  const [name, setName] = useState("wg0");
+  const [serverName, setServerName] = useState("wg0");
   const [port, setPort] = useState("51820");
   const [serverAddress, setServerAddress] = useState("10.13.14.1");
   const [peers, setPeers] = useState("1");
@@ -40,7 +40,7 @@ const WireGuardDashboard = () => {
     try {
       const response = await fetch("/api/wireguard/create", {
         method: "POST",
-        body: JSON.stringify({ name, port, serverAddress, peers }),
+        body: JSON.stringify({ serverName, port, serverAddress, peers }),
         headers: {
           "Content-Type": "application/json",
         },
@@ -49,11 +49,6 @@ const WireGuardDashboard = () => {
       if (!response.ok) {
         throw new Error("Failed to create WireGuard interface");
       }
-
-      setName("");
-      setPort("");
-      setServerAddress("");
-      setPeers("");
       setShowDialog(false); // Close dialog on success
       refetch(); // Refetch the interfaces to get the updated list
     } catch (error) {
@@ -134,7 +129,7 @@ const WireGuardDashboard = () => {
         <Typography color="error">Failed to fetch interfaces</Typography>
       ) : (
         <Grid container spacing={3}>
-          {WGinterfaces.length === 0 ? (
+          {Array.isArray(WGinterfaces) && WGinterfaces.length === 0 ? (
             <Typography>No WireGuard interfaces found.</Typography>
           ) : (
             WGinterfaces.map((iface) => {
@@ -226,8 +221,8 @@ const WireGuardDashboard = () => {
         onCreate={handleCreateInterface}
         loading={loading}
         error={error}
-        name={name}
-        setName={setName}
+        serverName={serverName}
+        setServerName={setServerName}
         port={port}
         setPort={setPort}
         serverAddress={serverAddress}

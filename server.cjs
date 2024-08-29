@@ -49,7 +49,6 @@ app.prepare().then(() => {
     }
   });
 
-  server.use("/api/wireguard", wireguardRoutes);
   server.use("/api", loginRoutes);
   server.use("/api/updates", updateRoutes);
   server.use("/api", storageRoutes);
@@ -57,6 +56,7 @@ app.prepare().then(() => {
   server.use("/api/system-status", systemRoutes);
   server.use('/api/systeminfo', systemInfoRoutes);
   server.use('/api', powerRoutes);
+  server.use("/api/wireguard", wireguardRoutes);
 
   // Handle all other routes with Next.js
   server.all('*', (req, res) => { return handle(req, res); });
