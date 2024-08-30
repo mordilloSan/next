@@ -1,209 +1,15 @@
 const express = require('express');
 const fs = require('fs').promises;
-const dgram = require('dgram');
 const path = require('path');
-const { stat, mkdir } = require('fs').promises;
-const { networkInterfaces } = require('os');
-const { executeCommand, executeSudoCommand } = require('./executer.cjs');
+const { executeCommand } = require('./executer.cjs');
+const wgManager = require('./wgManager.cjs');
 const WG_CONFIG_DIR = '/etc/wireguard';
 const server = express.Router();
-
-// Make sure a directory exists on the file system
-const makeSureDirExists = async (path) => {
-    try {
-        const stats = await stat(path);
-        if (!stats.isDirectory()) { throw new Error(`${path} exists but is not a directory`); }
-        return 'Directory already exists';
-    } catch (e) {
-        if (e.code === 'ENOENT') {
-            await mkdir(path, { recursive: true });
-            return 'Directory created';
-        } else { throw e; } // Rethrow other errors
-    }
-};
-
-function isIPAddressAvailable(ipAddress) {
-    const nets = networkInterfaces();
-    for (const name of Object.keys(nets)) {
-        for (const net of nets[name]) {
-            if (net.family === 'IPv4' && net.address === ipAddress) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
-// Convert an IP address from dotted-decimal to a long integer
-function ipToLong(ip) {
-    return ip.split('.').reduce((acc, octet) => ((acc << 8) + parseInt(octet, 10)), 0) >>> 0;
-}
-
-// Convert a long integer to a dotted-decimal IP address
-function longToIp(long) {
-    return [
-        (long >>> 24) & 255,
-        (long >>> 16) & 255,
-        (long >>> 8) & 255,
-        long & 255
-    ].join('.');
-}
-
-// Calculate the network address and number of hosts in a CIDR
-function calculateCIDRDetails(cidr) {
-    const [baseIp, prefixLength] = cidr.split('/');
-    const subnetMask = ~((1 << (32 - prefixLength)) - 1);
-    const networkAddress = ipToLong(baseIp) & subnetMask;
-    const numHosts = (1 << (32 - prefixLength)) - 2; // Subtract network and broadcast addresses
-    return {
-        networkAddress: longToIp(networkAddress),
-        numHosts: numHosts,
-    };
-}
-
-// Utility to get array of IP from a CIDR
-function getAvailableIPAddresses(cidr, count) {
-    const baseIp = ip.cidrSubnet(cidr).networkAddress;
-    const subnetSize = ip.cidrSubnet(cidr).numHosts;
-    const availableIps = [];
-    let currentIndex = 1; // Start from the first available IP in the range
-
-    while (availableIps.length < count && currentIndex < subnetSize) {
-        const nextIp = ip.fromLong(ip.toLong(baseIp) + currentIndex);
-        if (isIPAddressAvailable(nextIp)) {
-            availableIps.push(nextIp);
-        }
-        currentIndex++;
-    }
-
-    if (availableIps.length < count) {
-        throw new Error(`Not enough available IP addresses in the CIDR range ${cidr}`);
-    }
-
-    return availableIps;
-}
-
-// Utility function to calculate the next IP in a given CIDR range
-function getNextIPAddress(cidr, index) {
-    const [base, subnet] = cidr.split('/');
-    const ipParts = base.split('.').map(part => parseInt(part, 10));
-    ipParts[3] += index;
-    return ipParts.join('.') + '/' + subnet;
-}
-
-// Function to generate keys
-async function generateKeys() {
-    const stripWhiteSpace = (s) => s.replace(/\s/g, '')
-    const privateKey = await executeCommand(`wg genkey`)
-    const publicKey = await executeCommand(`echo "${privateKey}" | wg pubkey`)
-    const preSharedKey = await executeCommand(`wg genpsk`)
-    return {
-        privateKey: stripWhiteSpace(privateKey),
-        publicKey: stripWhiteSpace(publicKey),
-        preSharedKey: stripWhiteSpace(preSharedKey)
-    }
-}
-
-// Function to check if a UDP port is already used with a timeout
-function detectUdpPortInUse(port, timeout = 5000) {
-    console.log(`Checking if UDP port ${port} is in use...`);
-
-    return new Promise((resolve, reject) => {
-        const udpTester = dgram.createSocket('udp4');
-        let timeoutHandle;
-
-        udpTester.once('error', (err) => {
-            clearTimeout(timeoutHandle);
-            if (err.code === 'EADDRINUSE') {
-                console.log(`UDP port ${port} is already in use.`);
-                resolve(true);
-            } else {
-                console.error(`Error checking UDP port ${port}:`, err);
-                reject(err);
-            }
-        });
-
-        udpTester.once('listening', () => {
-            console.log(`UDP port ${port} is free.`);
-            clearTimeout(timeoutHandle);
-            udpTester.close();
-            resolve(false);
-        });
-
-        udpTester.bind(port);
-
-        timeoutHandle = setTimeout(() => {
-            console.log(`Timeout while checking UDP port ${port}.`);
-            udpTester.close();
-            resolve(false);
-        }, timeout);
-    });
-}
-
-// Function to detect public IP using an asynchronous call
-async function detectPublicIP() {
-    try {
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
-        return data.ip;
-    } catch (error) {
-        console.error('Error detecting public IP:', error);
-        throw new Error('Failed to detect public IP.');
-    }
-}
-
-// Helper function to check if WireGuard is installed
-async function ensureWireGuardInstalled() {
-    try {
-        const version = await executeCommand('wg -v')
-        console.log('WireGuard version - ', version);
-        return version
-    } catch (error) {
-        throw new Error('Wireguard is not installed on the system. Please install wg and wg-quick')
-    }
-}
-
-// Function to detect possible WireGuard interfaces
-async function detectWireguardInterfaces(req) {
-    try {
-        const { user } = req.session;
-        const password = user?.password;
-        const stdout = await executeSudoCommand('wg show', password);
-        const activeInterfaces = stdout
-            .split('\n')
-            .map(line => line.match(/^interface: (\w+)/))
-            .filter(match => match)
-            .map(match => match[1]);
-
-        await fs.mkdir(WG_CONFIG_DIR, { recursive: true });
-        const files = await fs.readdir(WG_CONFIG_DIR);
-        const configInterfaces = files
-            .filter(file => file.endsWith('.conf'))
-            .map(file => file.replace('.conf', ''));
-
-        const interfaceStatus = configInterfaces.map(configInterface => ({
-            name: configInterface,
-            status: activeInterfaces.includes(configInterface) ? 'active' : 'inactive',
-        }));
-
-        const activeWithoutConfig = activeInterfaces
-            .filter(activeInterface => !configInterfaces.includes(activeInterface))
-            .map(activeInterface => ({
-                name: activeInterface,
-                status: 'active (no config file)',
-            }));
-
-        return [...interfaceStatus, ...activeWithoutConfig];
-    } catch (error) {
-        console.error('Error detecting WireGuard interfaces:', error);
-        return [];
-    }
-}
 
 // API endpoint to retrieve interface details including clients
 server.get('/interfaces', async (req, res) => {
     try {
-        const interfaces = await detectWireguardInterfaces(req);
+        const interfaces = await wgManager.detectWireguardInterfaces(req);
         const interfaceDetails = [];
 
         for (const iface of interfaces) {
@@ -255,35 +61,92 @@ server.get('/interfaces', async (req, res) => {
 
 // API endpoint to create a WireGuard interface
 server.post('/create', async (req, res) => {
-    const { serverName, port, serverAddress, peers } = req.body;
+    const { serverName, port, CIDR, peers } = req.body;
 
-    if (!serverName || !port || !serverAddress | !peers) {
-        return res.status(400).json({ error: 'More data is required.' });
+    // Step 1: Validate input
+    if (!serverName || !port || !CIDR || !peers || peers.length === 0) {
+        return res.status(400).json({ error: 'serverName, port, CIDR, and peers are required.' });
     }
 
-    if (await detectUdpPortInUse(port)) {
-        return res.status(400).json({ error: 'Port is already used.' });
-    }
-
-    const filePath = path.join(WG_CONFIG_DIR, `${serverName}.conf`);
     try {
+        // Check if IP addresses are available within the given CIDR
+        try {
+            const availableIps = wgManager.getAvailableIPAddresses(CIDR, peers.length + 1); // +1 for the server itself
+            if (availableIps.length < peers.length + 1) {
+                return res.status(400).json({ error: 'Not enough available IP addresses in the given CIDR.' });
+            }
+        } catch (error) {
+            console.error('Error finding available IP addresses:', error.message);
+            return res.status(400).json({ error: error.message });
+        }
 
+        // Check if the specified port is available
+        const portInUse = await wgManager.detectUdpPortInUse(port);
+        if (portInUse) {
+            return res.status(400).json({ error: 'The specified port is already in use.' });
+        }
 
-        res.json({ message: `WireGuard interface ${serverName} created successfully.` });
+        // Check if the interface already exists
+        try {
+            const interfaces = await wgManager.detectWireguardInterfaces(req);
+            const interfaceExists = interfaces.some(iface => iface.name === serverName);
+
+            if (interfaceExists) {
+                console.log("WireGuard interface ${serverName} already exists.")
+                return res.status(400).json({ error: `WireGuard interface ${serverName} already exists.` });
+            }
+        } catch (error) {
+            console.error('Error detecting existing interfaces:', error.message);
+            return res.status(500).json({ error: `Failed to detect existing interfaces: ${error.message}` });
+        }
+        // Step 4: Get global ip
+        const endPoint = await wgManager.detectPublicIP();
+
+        // Step 4: Generate keys for the server
+        const serverKeys = await wgManager.generateKeys();
+
+        // Step 5: Create the configuration content
+        let configContent = `
+[Interface]
+Address = ${availableIps[0]}
+ListenPort = ${port}
+PrivateKey = ${serverKeys.privateKey}
+PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o enp+ -j MASQUERADE
+PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o enp+ -j MASQUERADE
+`;
+        // Add peer configurations
+        for (let i = 0; i < peers.length; i++) {
+            const peerKeys = await wgManager.generateKeys(); // Generate keys for each peer
+            configContent += `
+[Peer]
+PublicKey = ${peerKeys.publicKey}
+PresharedKey = ${peerKeys.preSharedKey}
+AllowedIPs = ${availableIps[i + 1]}/32
+`;
+        }
+
+        // Step 6: Write the configuration to a file
+        const filePath = path.join(WG_CONFIG_DIR, `${serverName}.conf`);
+        await fs.writeFile(filePath, configContent);
+        console.log(`Configuration file for ${serverName} written successfully.`);
+
+        // Step 7: Bring up the WireGuard interface using the configuration
+        await executeCommand(`wg-quick up ${filePath}`);
+        console.log(`WireGuard interface ${serverName} is up and running.`);
+
+        // Success response
+        return res.status(201).json({ message: `WireGuard interface ${serverName} created and running successfully.` });
+
     } catch (error) {
         console.error('Error creating WireGuard interface:', error);
-        res.status(500).json({ error: 'Failed to create WireGuard interface.' });
+        return res.status(500).json({ error: 'Failed to create WireGuard interface.' });
     }
 });
 
 // API endpoint to delete a WireGuard interface
 server.delete('/delete/:name', async (req, res) => {
     const { name } = req.params;
-
-    if (!name) {
-        return res.status(400).json({ error: 'Interface name is required.' });
-    }
-
+    if (!name) { return res.status(400).json({ error: 'Interface name is required.' }); }
     const configFilePath = path.join(WG_CONFIG_DIR, `${name}.conf`);
 
     try {
@@ -324,7 +187,6 @@ server.delete('/delete/:name', async (req, res) => {
     }
 });
 
-
 // API endpoint to start/stop a WireGuard interface
 server.post('/toggle/:name', async (req, res) => {
     const { name } = req.params;
@@ -346,7 +208,7 @@ server.post('/toggle/:name', async (req, res) => {
         await fs.access(configFilePath);
 
         // Retrieve the current status of all interfaces
-        const interfaces = await detectWireguardInterfaces(req);
+        const interfaces = await wgManager.detectWireguardInterfaces(req);
         const interfaceDetails = interfaces.find(iface => iface.name === name);
 
         if (!interfaceDetails) {
@@ -392,12 +254,12 @@ server.get('/check', async (req, res) => {
 
     try {
         // Check if WireGuard is installed
-        wgVersion = await ensureWireGuardInstalled();
+        wgVersion = await wgManager.ensureWireGuardInstalled();
         installedStatus = "ok";
 
         try {
             // Ensure the WireGuard directory exists
-            directoryMessage = await makeSureDirExists(WG_CONFIG_DIR);
+            directoryMessage = await wgManager.makeSureDirExists(WG_CONFIG_DIR);
             directoryStatus = "ok";
         } catch (dirError) {
             directoryStatus = "not ok";

@@ -14,7 +14,7 @@ const WireGuardDashboard = () => {
   const customFetch = useAuthenticatedFetch();
   const [serverName, setServerName] = useState("wg0");
   const [port, setPort] = useState("51820");
-  const [serverAddress, setServerAddress] = useState("10.13.14.1");
+  const [CIDR, setCIDR] = useState("10.10.20.0/24");
   const [peers, setPeers] = useState("1");
   const [showDialog, setShowDialog] = useState(false);
   const [error, setError] = useState(null);
@@ -40,20 +40,21 @@ const WireGuardDashboard = () => {
     try {
       const response = await fetch("/api/wireguard/create", {
         method: "POST",
-        body: JSON.stringify({ serverName, port, serverAddress, peers }),
+        body: JSON.stringify({ serverName, port, CIDR, peers }),
         headers: {
           "Content-Type": "application/json",
         },
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create WireGuard interface");
+        const errorData = await response.json(); // Parse the error response
+        throw new Error(errorData.error || "Failed to create WireGuard interface");
       }
       setShowDialog(false); // Close dialog on success
       refetch(); // Refetch the interfaces to get the updated list
     } catch (error) {
       console.error("Failed to create WireGuard interface:", error);
-      setError("Failed to create interface. Please try again.");
+      setError(error.message); // Display the detailed error message
     } finally {
       setLoading(false);
     }
@@ -129,7 +130,7 @@ const WireGuardDashboard = () => {
         <Typography color="error">Failed to fetch interfaces</Typography>
       ) : (
         <Grid container spacing={3}>
-          {Array.isArray(WGinterfaces) && WGinterfaces.length === 0 ? (
+          {!Array.isArray(WGinterfaces) || WGinterfaces.length === 0 ? (
             <Typography>No WireGuard interfaces found.</Typography>
           ) : (
             WGinterfaces.map((iface) => {
@@ -225,8 +226,8 @@ const WireGuardDashboard = () => {
         setServerName={setServerName}
         port={port}
         setPort={setPort}
-        serverAddress={serverAddress}
-        setServerAddress={setServerAddress}
+        CIDR={CIDR}
+        setCIDR={setCIDR}
         peers={peers}
         setPeers={setPeers}
       />

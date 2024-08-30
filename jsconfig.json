@@ -51,7 +51,7 @@
     "**/*.js",
     "**/*.jsx",
     "**/*.cjs",
-    "src/assets/iconify-icons/bundle-icons-css.mjs", "server/wg/createInterfaceConfig.ts",
+    "src/assets/iconify-icons/bundle-icons-css.mjs", "server/wg/createInterfaceConfig.ts", "server/wgManager.cjs",
    ],
   "exclude": [
     "node_modules"

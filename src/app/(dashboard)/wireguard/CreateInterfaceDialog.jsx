@@ -1,7 +1,7 @@
 import React from "react";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Alert, } from "@mui/material";
 
-const CreateInterfaceDialog = ({ open, onClose, onCreate, loading, error, serverName, setServerName, port, setPort, serverAddress, setServerAddress, peers, setPeers}) => {
+const CreateInterfaceDialog = ({ open, onClose, onCreate, loading, error, serverName, setServerName, port, setPort, CIDR, setCIDR, peers, setPeers}) => {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>Create New Interface</DialogTitle>
@@ -9,7 +9,7 @@ const CreateInterfaceDialog = ({ open, onClose, onCreate, loading, error, server
         <Box mt={2}>
           <TextField label="Interface Name" value={serverName} onChange={(e) => setServerName(e.target.value)} fullWidth margin="normal" />
           <TextField label="Port" type="number" value={port} onChange={(e) => setPort(e.target.value)} fullWidth margin="normal" />
-          <TextField label="Address" value={serverAddress} onChange={(e) => setServerAddress(e.target.value)} fullWidth margin="normal" />
+          <TextField label="CIDR" value={CIDR} onChange={(e) => setCIDR(e.target.value)} fullWidth margin="normal" />
           <TextField label="Peers" type="number" value={peers} onChange={(e) => setPeers(e.target.value)} fullWidth margin="normal" />
           {error && (
             <Alert severity="error" sx={{ mt: 2 }}>
