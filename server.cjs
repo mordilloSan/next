@@ -30,7 +30,7 @@ app.prepare().then(() => {
       checkPeriod: 86400000, // prune expired entries every 24h
     }),
     cookie: {
-      secure: false, // Set to true if using HTTPS
+      secure: true, // Set to true if using HTTPS
       httpOnly: true,
       maxAge: 3600000,
       sameSite: 'Lax',
