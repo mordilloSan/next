@@ -7,7 +7,6 @@ import NavToggle from "./NavToggle";
 import SettingsDropdown from "./SettingsDropdown";
 import Breadcrumbs from "@/components/layout/NavBar/BreadCrumbs";
 import PowerDropdown from "./PowerDropdown";
-
 // Util Imports
 import { verticalLayoutClasses } from "@/utils/layoutClasses";
 

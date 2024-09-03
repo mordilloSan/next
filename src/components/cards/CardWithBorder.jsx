@@ -56,14 +56,7 @@ const CardWithBorder = (props) => {
       }}
     >
       <CardContent>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 1,
-          }}
-        >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Typography variant="h4" sx={{ fontWeight: "bold" }}>
               {title}
@@ -79,14 +72,7 @@ const CardWithBorder = (props) => {
         </Box>
         {stats2 ? (
           <Box
-            sx={{
-              mt: 2,
-              display: "flex",
-              flexDirection: { xs: "column", sm: "column", xl: "row" },
-              gap: 2,
-              alignItems: { xs: "center", sm: "center", xl: "flex-start" },
-            }}
-          >
+            sx={{ mt: 2, display: "flex", flexDirection: { xs: "column", sm: "column", xl: "row" }, gap: 2, alignItems: { xs: "center", sm: "center", xl: "flex-start" }}}>
             <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
               {stats}
             </Box>

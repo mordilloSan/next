@@ -6,9 +6,7 @@ import "@/app/globals.css";
 
 // Generated Icon CSS Imports
 import "@assets/iconify-icons/generated-icons.css";
-
 import QueryProvider from "@/components/query";
-
 import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata = {
@@ -21,7 +19,7 @@ const RootLayout = ({ children }) => {
     <html id="__next" lang="en">
       <body className="flex is-full min-bs-full flex-auto flex-col">
         <QueryProvider>
-          <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>{children}</AuthProvider>
         </QueryProvider>
       </body>
     </html>

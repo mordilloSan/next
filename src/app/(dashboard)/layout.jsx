@@ -11,10 +11,12 @@ import Navigation from "@/components/layout/vertical-menu/Navigation";
 import Navbar from "@/components/layout/NavBar/Navbar";
 import ScrollToTop from "@/components/scroll-to-top";
 import Customizer from "@/components/customizer";
+import { Toaster } from "sonner"; // Import Toaster and toast from Sonner in this global layout
 
 export default function Layout({ children }) {
   return (
     <Providers>
+      <Toaster position="top-right" richColors />
       <LayoutWrapper
         verticalLayout={
           <VerticalLayout navigation={<Navigation />} navbar={<Navbar />}>

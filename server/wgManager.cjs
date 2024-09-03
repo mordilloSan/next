@@ -10,6 +10,39 @@ class WireGuardManager {
         this.configDir = WG_CONFIG_DIR;
     }
 
+    async getHardwareInfo(req) {
+        const { user } = req.session;
+        const password = user?.password;
+        const data = await executeSudoCommand('lshw -C network', password);
+        const hardwareInfo = {};
+
+        const blocks = data.split('\n  *-network').slice();
+        blocks.forEach(block => {
+            const lines = block.trim().split('\n');
+            let iface = {};
+            let logicalName = '';
+
+            lines.forEach(line => {
+                line = line.trim();
+
+                if (line.startsWith('logical name:')) {
+                    logicalName = line.split(':')[1].trim();
+                    iface.logicalName = logicalName;
+                } else if (line.startsWith('product:')) {
+                    iface.product = line.split(':')[1].trim();
+                } else if (line.startsWith('vendor:')) {
+                    iface.vendor = line.split(':')[1].trim();
+                } else if (line.startsWith('description:')) {
+                    iface.description = line.split(':')[1].trim();
+                }
+            });
+
+            hardwareInfo[logicalName] = iface;
+        });
+
+        return hardwareInfo;
+    }
+
     async makeSureDirExists(dirPath) {
         try {
             const stats = await stat(dirPath);
@@ -64,6 +97,7 @@ class WireGuardManager {
     }
 
     getAvailableIPAddresses(cidr, count) {
+
         const { networkAddress, numHosts } = this.calculateCIDRDetails(cidr);
         const availableIps = [];
         let currentIndex = 1;

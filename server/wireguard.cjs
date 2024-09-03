@@ -61,18 +61,22 @@ server.get('/interfaces', async (req, res) => {
 
 // API endpoint to create a WireGuard interface
 server.post('/create', async (req, res) => {
-    const { serverName, port, CIDR, peers } = req.body;
+    const { serverName, port, CIDR, peers, nic } = req.body;
 
     // Step 1: Validate input
-    if (!serverName || !port || !CIDR || !peers || peers.length === 0) {
-        return res.status(400).json({ error: 'serverName, port, CIDR, and peers are required.' });
+    if (!serverName || !port || !CIDR || !peers || peers <= 0 || !nic) {
+        return res.status(400).json({ error: 'Must fill out all fields.' });
     }
+    console.log('Received values:', serverName, port, CIDR, peers, nic);
+
+    let availableIps;
+    let configContent = "";
 
     try {
         // Check if IP addresses are available within the given CIDR
         try {
-            const availableIps = wgManager.getAvailableIPAddresses(CIDR, peers.length + 1); // +1 for the server itself
-            if (availableIps.length < peers.length + 1) {
+            availableIps = wgManager.getAvailableIPAddresses(CIDR, peers + 1); // +1 for the server itself
+            if (availableIps.length < peers + 1) {
                 return res.status(400).json({ error: 'Not enough available IP addresses in the given CIDR.' });
             }
         } catch (error) {
@@ -92,45 +96,72 @@ server.post('/create', async (req, res) => {
             const interfaceExists = interfaces.some(iface => iface.name === serverName);
 
             if (interfaceExists) {
-                console.log("WireGuard interface ${serverName} already exists.")
+                console.log(`WireGuard interface ${serverName} already exists.`);
                 return res.status(400).json({ error: `WireGuard interface ${serverName} already exists.` });
             }
         } catch (error) {
             console.error('Error detecting existing interfaces:', error.message);
             return res.status(500).json({ error: `Failed to detect existing interfaces: ${error.message}` });
         }
-        // Step 4: Get global ip
+
+        // Get global IP
         const endPoint = await wgManager.detectPublicIP();
 
-        // Step 4: Generate keys for the server
+        // Generate keys for the server
         const serverKeys = await wgManager.generateKeys();
 
-        // Step 5: Create the configuration content
-        let configContent = `
+        // Create the server configuration
+        configContent = `
 [Interface]
 Address = ${availableIps[0]}
 ListenPort = ${port}
 PrivateKey = ${serverKeys.privateKey}
-PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o enp+ -j MASQUERADE
-PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o enp+ -j MASQUERADE
+PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o ${nic}+ -j MASQUERADE
+PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o ${nic}+ -j MASQUERADE
 `;
-        // Add peer configurations
-        for (let i = 0; i < peers.length; i++) {
-            const peerKeys = await wgManager.generateKeys(); // Generate keys for each peer
+
+        // Ensure the server directory exists
+        const serverDirPath = path.join(WG_CONFIG_DIR, serverName);
+        await fs.mkdir(serverDirPath, { recursive: true });
+
+        // Add peer configurations to the server configuration
+        for (let i = 0; i < peers; i++) {
+            const peerKeys = await wgManager.generateKeys();
             configContent += `
 [Peer]
 PublicKey = ${peerKeys.publicKey}
 PresharedKey = ${peerKeys.preSharedKey}
 AllowedIPs = ${availableIps[i + 1]}/32
 `;
+
+            // Create peer configuration
+            const peerConfigContent = `
+[Interface]
+Address = ${availableIps[i + 1]}/32
+PrivateKey = ${peerKeys.privateKey}
+ListenPort = ${port}
+
+[Peer]
+PublicKey = ${serverKeys.publicKey}
+PresharedKey = ${peerKeys.preSharedKey}
+AllowedIPs = 0.0.0.0/0, ::/0
+Endpoint = ${endPoint}:${port}
+PersistentKeepalive = 25
+`.trim();
+
+            // Write each peer configuration to a separate file
+            const peerConfigPath = path.join(serverDirPath, `peer${i + 1}.conf`);
+            await fs.writeFile(peerConfigPath, peerConfigContent);
+            console.log(`Peer configuration file peer${i + 1}.conf written successfully.`);
         }
 
-        // Step 6: Write the configuration to a file
+        // Write the server configuration to a file
         const filePath = path.join(WG_CONFIG_DIR, `${serverName}.conf`);
+        configContent = configContent.trim();
         await fs.writeFile(filePath, configContent);
         console.log(`Configuration file for ${serverName} written successfully.`);
 
-        // Step 7: Bring up the WireGuard interface using the configuration
+        // Bring up the WireGuard interface using the configuration
         await executeCommand(`wg-quick up ${filePath}`);
         console.log(`WireGuard interface ${serverName} is up and running.`);
 
@@ -146,8 +177,13 @@ AllowedIPs = ${availableIps[i + 1]}/32
 // API endpoint to delete a WireGuard interface
 server.delete('/delete/:name', async (req, res) => {
     const { name } = req.params;
-    if (!name) { return res.status(400).json({ error: 'Interface name is required.' }); }
+
+    if (!name) {
+        return res.status(400).json({ error: 'Interface name is required.' });
+    }
+
     const configFilePath = path.join(WG_CONFIG_DIR, `${name}.conf`);
+    const clientFolderPath = path.join(WG_CONFIG_DIR, name); // Path to client (peer) configuration folder
 
     try {
         // Check if the configuration file exists
@@ -164,6 +200,21 @@ server.delete('/delete/:name', async (req, res) => {
             } else {
                 console.error(`Error while bringing down WireGuard interface ${name}:`, err.message);
                 return res.status(500).json({ error: `Failed to bring down WireGuard interface ${name}.` });
+            }
+        }
+
+        // Delete the client (peer) configuration folder
+        try {
+            // Check if the client folder exists
+            await fs.access(clientFolderPath);
+            await fs.rmdir(clientFolderPath, { recursive: true }); // Remove the folder and its contents
+            console.log(`Client configuration folder ${clientFolderPath} deleted.`);
+        } catch (err) {
+            if (err.code === 'ENOENT') {
+                console.log(`Client configuration folder ${clientFolderPath} does not exist, skipping.`);
+            } else {
+                console.warn(`Could not delete client configuration folder for ${name}:`, err.message);
+                return res.status(500).json({ error: `Failed to delete client configuration folder for interface ${name}.` });
             }
         }
 
@@ -239,8 +290,25 @@ server.post('/toggle/:name', async (req, res) => {
             console.error(`Configuration file ${configFilePath} does not exist.`);
             return res.status(404).json({ error: `Configuration file for interface ${name} does not exist.` });
         }
+        // Check for specific error messages
+        if (error.message.includes('Address already in use')) {
+            console.error(`Error toggling WireGuard interface ${name}: Address already in use.`);
+            return res.status(400).json({ error: 'The IP address is already in use. Please check the configuration.' });
+        }
         console.error(`Error toggling WireGuard interface ${name}:`, error);
         return res.status(500).json({ error: `Failed to ${status} WireGuard interface ${name}.` });
+    }
+});
+
+// API endpoint to retrieve available network interfaces
+server.get('/nics', async (req, res) => {
+    try {
+        const hardwareInfo = await wgManager.getHardwareInfo(req);
+        const nicList = Object.keys(hardwareInfo);
+        return res.json(nicList);
+    } catch (error) {
+        console.error('Error retrieving network interfaces:', error);
+        return res.status(500).json({ error: 'Failed to retrieve network interfaces' });
     }
 });
 

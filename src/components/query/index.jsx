@@ -1,18 +1,20 @@
 "use client";
 
-import React from "react";
-
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 function makeQueryClient() {
   return new QueryClient({
+    queryCache: new QueryCache({
+      onError: (error) => {
+        toast.error(error.message || "An error occurred with the query.");
+      },
+    }),
     defaultOptions: {
       queries: {
-        staleTime: 3000, // 3 seconds
-        cacheTime: 5 * 60 * 1000, // 5 minutes
-        retry: 2, // Retry failed requests up to 2 times
-        refetchOnWindowFocus: false, // Do not refetch on window focus
-      },
+        retry: 1,
+        refetchOnWindowFocus: false,
+      }
     },
   });
 }
@@ -21,11 +23,9 @@ let browserQueryClient;
 
 function getQueryClient() {
   if (typeof window === "undefined") {
-    // Server: always make a new query client
     return makeQueryClient();
   } else {
     if (!browserQueryClient) browserQueryClient = makeQueryClient();
-
     return browserQueryClient;
   }
 }
@@ -34,6 +34,8 @@ export default function Providers({ children }) {
   const queryClient = getQueryClient();
 
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
   );
 }

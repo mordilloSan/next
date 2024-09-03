@@ -6,13 +6,13 @@ const crypto = require('crypto');
 const pem = require('pem');
 
 const { router: loginRoutes, isAuthenticated } = require("./server/auth.cjs");
-const wireguardRoutes = require('./server/wireguard.cjs');
 const updateRoutes = require('./server/update.cjs');
 const storageRoutes = require('./server/storage.cjs');
 const networkRoutes = require('./server/network.cjs');
 const systemRoutes = require('./server/systemstatus.cjs');
 const systemInfoRoutes = require('./server/systeminfo.cjs');
 const powerRoutes = require('./server/power.cjs');
+const wireguardRoutes = require('./server/wireguard.cjs');
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
