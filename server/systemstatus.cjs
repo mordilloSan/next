@@ -4,19 +4,19 @@ const { executeCommand } = require('./executer.cjs'); // Assuming your custom co
 const router = express.Router();
 
 // Simple in-memory cache for service descriptions
-let cachedServiceDescriptions = {};
+const serviceDescriptionCache = new Map(); // Use a Map for better performance with large data
 
 // Helper function to get service details including description
 async function getServiceDetails(service) {
-    if (cachedServiceDescriptions[service]) {
-        return cachedServiceDescriptions[service];
+    if (serviceDescriptionCache.has(service)) {
+        return serviceDescriptionCache.get(service);
     }
 
     const command = `systemctl show ${service} --property=Description`;
     try {
         const result = await executeCommand(command);
         const description = result.split('=')[1]?.trim() || 'No description available';
-        cachedServiceDescriptions[service] = description; // Cache the description
+        serviceDescriptionCache.set(service, description); // Cache the description
         return description;
     } catch (error) {
         console.error(`Failed to get details for service ${service}: ${error}`);
@@ -32,6 +32,7 @@ router.get('/services', async (req, res) => {
         const result = await executeCommand(command);
         const lines = result.split('\n').slice(1).filter((line) => line.trim() !== '');
 
+        // Map services from the systemctl result
         const services = lines.map((line) => {
             const parts = line.trim().match(/^(\S+)\s+(\S+)\s*(\S+)?$/);
             if (parts) {
@@ -45,13 +46,14 @@ router.get('/services', async (req, res) => {
                     name,
                     loadState,
                     activeState: activeState || 'N/A',
-                    description: cachedServiceDescriptions[name] || '',  // Check cache
+                    description: serviceDescriptionCache.get(name) || '',  // Check cache
                 };
             } else {
                 return null;
             }
         }).filter(service => service !== null);
 
+        // Fetch descriptions for services that don't have one in the cache
         const servicesToFetch = services.filter(service => !service.description);
 
         if (servicesToFetch.length > 0) {
@@ -62,6 +64,7 @@ router.get('/services', async (req, res) => {
             );
         }
 
+        // Return the full list of services with their descriptions
         res.json({ services });
     } catch (error) {
         console.error(`Failed to get system services: ${error}`);

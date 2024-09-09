@@ -53,52 +53,41 @@ const WireGuardDashboard = () => {
           {!Array.isArray(WGinterfaces) || WGinterfaces.length === 0 ? (
             <Typography>No WireGuard interfaces found.</Typography>
           ) : (
-            WGinterfaces.map((iface) => {
-              const toggleAction = iface.status === "active" ? "down" : "up";
-
-              return (
-                <Grid item xs={12} md={6} lg={4} key={iface.name}>
-                  <Card>
-                    <CardContent>
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Typography variant="h6">{iface.name}</Typography>
-                        <Box>
-                          <IconButton
-                            sx={{color: iface.status === "active" ? settings.primaryColor : "gray"}}
-                            aria-label="Power"
-                            onClick={() => handleToggleInterface(iface.name, toggleAction)}
-                          >
-                            <PowerSettingsNewIcon />
-                          </IconButton>
-                          <IconButton onClick={() => handleDelete(iface.name)}>
-                            <Delete />
-                          </IconButton>
-                          <IconButton onClick={() => console.log("Edit action for", iface.name)}>
-                            <Edit />
-                          </IconButton>
-                        </Box>
+            WGinterfaces.map((iface) => (
+              <Grid item xs={12} md={6} lg={4} key={iface.name}>
+                <Card>
+                  <CardContent>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography variant="h6">{iface.name}</Typography>
+                      <Box>
+                        <IconButton
+                          sx={{ color: iface.status === "active" ? settings.primaryColor : "gray" }}
+                          aria-label="Power"
+                          onClick={() => handleToggleInterface(iface.name, iface.status === "active" ? "down" : "up")}
+                        >
+                          <PowerSettingsNewIcon />
+                        </IconButton>
+                        <IconButton onClick={() => handleDelete(iface.name)}>
+                          <Delete />
+                        </IconButton>
+                        <IconButton onClick={() => console.log("Edit action for", iface.name)}>
+                          <Edit />
+                        </IconButton>
                       </Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Status:{" "}
-                        <span style={{ color: iface.status === "active" ? settings.primaryColor : "inherit" }}>
-                          {iface.status}
-                        </span>
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Clients: {iface.clients.length}
-                      </Typography>
-                      <div>
-                        {iface.clients.map((client, index) => (
-                          <Typography key={index} variant="body2" color="textSecondary">
-                            {client.publicKey} - {client.allowedIPs}
-                          </Typography>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              );
-            })
+                    </Box>
+                    <Typography variant="body2" color="textSecondary">
+                      Address: {iface.address}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Port: {iface.port}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Peers: {iface.peerCount}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))
           )}
         </Grid>
       )}

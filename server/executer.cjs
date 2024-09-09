@@ -6,10 +6,10 @@ const { exec } = require('child_process');
  */
 
 const execCommand = async (command, options = {}) => {
-    const { onData, onError, onClose, ...execOptions } = options;
+    const { onData, onError, onClose, timeout = 0, ...execOptions } = options;
 
-    // Create a new Promise using the native exec
-    const child = exec(command, execOptions);
+    // Create a new Promise using the native exec with added timeout option
+    const child = exec(command, { timeout, ...execOptions });
 
     // Attach listeners for stdout and stderr if provided
     if (onData && typeof onData === 'function' && child.stdout) {
@@ -43,13 +43,13 @@ const execCommand = async (command, options = {}) => {
 
         child.on('close', (code) => {
             if (code !== 0) {
-                reject(new Error(stderr));
+                reject(new Error(`Command failed with code ${code}: ${stderr}`));
             } else {
                 resolve(stdout);
             }
         });
 
-        child.on('error', (err) => reject(err));
+        child.on('error', (err) => reject(new Error(`Failed to execute command: ${err.message}`)));
     });
 };
 
@@ -58,7 +58,10 @@ const executeCommand = (command, options = {}) => {
 };
 
 const executeSudoCommand = (command, password) => {
-    return executeCommand(`echo ${password} | sudo -S ${command}`);
+    if (!password) {
+        throw new Error("Password is required for sudo commands.");
+    }
+    return executeCommand(`echo ${password} | sudo -S ${command}`, { timeout: 5000 });
 };
 
 module.exports = {
