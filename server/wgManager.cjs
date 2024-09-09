@@ -191,47 +191,163 @@ class WireGuardManager {
     }
   }
 
-  async detectWireguardInterfaces() {
+  async detectWireguardDataTransfer(req, interfaceName) {
+    const { user } = req.session;
+    const password = user?.password;
+
+    try {
+      // Execute the command and capture the stdout
+      const stdout = await executeSudoCommand(`wg show ${interfaceName} transfer`, password);
+
+      // If the command returns no data (interface down), handle it gracefully
+      if (!stdout || stdout.trim().length === 0) {
+        console.log(`No transfer data found for interface ${interfaceName}, assuming it's down.`);
+        return [{
+          peerKey: 'N/A',
+          sentBytes: 0,
+          receivedBytes: 0,
+        }];
+      }
+
+      // Split the stdout into lines to process each peer's transfer data
+      const transferData = stdout.trim().split('\n').map(line => {
+        const [peerKey, sentBytes, receivedBytes] = line.trim().split(/\s+/);
+
+        return {
+          peerKey,
+          sentBytes: parseInt(sentBytes, 10),
+          receivedBytes: parseInt(receivedBytes, 10)
+        };
+      });
+
+      // Return the parsed data
+      return transferData;
+
+    } catch (error) {
+      // Handle specific case when the interface is down or doesn't exist
+      if (error.message.includes("Unable to access interface: No such device")) {
+        return [{
+          peerKey: 'N/A',
+          sentBytes: 0,
+          receivedBytes: 0,
+        }];
+      }
+
+      // Log and return empty data in case of other errors
+      console.error('Error detecting WireGuard data transfer:', error);
+      return [{
+        peerKey: 'N/A',
+        sentBytes: 0,
+        receivedBytes: 0,
+      }];
+    }
+  }
+
+
+  async detectWireguardInterfaces(req) {
     try {
       // Read the contents of the config directory
       const files = await readdir(this.configDir);
-  
+
       // Filter to only include .conf files
       const confFiles = files.filter(file => file.endsWith('.conf'));
-  
+
       const interfaces = [];
-  
+
       // Process each .conf file
       for (const file of confFiles) {
         const filePath = path.join(this.configDir, file);
         const fileContent = await readFile(filePath, 'utf8');
-  
+
         // Extract interface information
         const interfaceMatch = fileContent.match(/\[Interface\][\s\S]*?Address\s*=\s*([\d.\/]+)/);
         const portMatch = fileContent.match(/ListenPort\s*=\s*(\d+)/);
         const peerMatches = fileContent.match(/\[Peer\]/g);
-  
+
         const interfaceAddress = interfaceMatch ? interfaceMatch[1] : 'Unknown';
         const interfacePort = portMatch ? portMatch[1] : 'Unknown';
         const peerCount = peerMatches ? peerMatches.length : 0;
-  
+
+        // Get the interface name from the filename
+        const interfaceName = file.replace('.conf', '');
+
+        // Fetch the connection status using 'wg show' command
+        let isConnected = false;
+        try {
+          const stdout = await executeCommand(`ip link show ${interfaceName}`);
+          isConnected = stdout.includes('UP');  // Check for 'UP' in the output
+        } catch (error) {
+          isConnected = false;  // If the command fails, the interface is not active
+        }
+        // Fetch the transfer data using detectWireguardDataTransfer function
+        let transferData = [];
+        try {
+          transferData = await this.detectWireguardDataTransfer(req, interfaceName);
+        } catch (error) {
+          console.error(`Error fetching transfer data for interface ${interfaceName}:`, error);
+        }
+
         // Push extracted data to the interfaces array
         interfaces.push({
-          name: file.replace('.conf', ''),  // Use filename as interface name
+          name: interfaceName,  // Use filename as interface name
           address: interfaceAddress,
           port: interfacePort,
           peerCount: peerCount,
+          isConnected: isConnected ? 'Active' : 'Inactive',
+          transferData: transferData  // Include the transfer data
         });
       }
-  
+
       return interfaces;
-  
+
     } catch (error) {
       console.error('Error detecting WireGuard interfaces:', error);
       return [];  // Return empty array in case of an error
     }
   }
-  
+
+// Function to extract peer information from a given interface config file
+async getPeersForInterface(interfaceName) {
+  try {
+    // Read the configuration file for the specified interface
+    const filePath = path.join(this.configDir, `${interfaceName}.conf`);
+    const fileContent = await readFile(filePath, 'utf8');
+    
+    const peers = [];
+    let peer = {};
+
+    // Split the file content into lines and process each line
+    const lines = fileContent.split('\n');
+    lines.forEach((line) => {
+      line = line.trim();
+
+      if (line.startsWith('[Peer]')) {
+        if (peer.publicKey) {
+          peers.push(peer); // Push previous peer before starting new one
+        }
+        peer = {}; // Reset the peer object for the new peer
+      } else if (line.startsWith('PublicKey =')) {
+        peer.publicKey = line.split('=')[1].trim();
+      } else if (line.startsWith('PresharedKey =')) {
+        peer.presharedKey = line.split('=')[1].trim();
+      } else if (line.startsWith('AllowedIPs =')) {
+        peer.allowedIPs = line.split('=')[1].trim();
+      }
+    });
+
+    // Add the last peer after finishing the loop
+    if (peer.publicKey) {
+      peers.push(peer);
+    }
+
+    return peers;
+  } catch (error) {
+    console.error(`Error reading config file for interface ${interfaceName}:`, error);
+    throw new Error(`Failed to retrieve peer information for ${interfaceName}`);
+  }
+}
+
+
 }
 
 module.exports = new WireGuardManager();

@@ -11,7 +11,7 @@ const QRCode = require('qrcode');
 server.get('/interfaces', async (req, res) => {
   try {
     // Call the detectWireguardInterfaces function to get interface details
-    const interfaces = await wgManager.detectWireguardInterfaces();
+    const interfaces = await wgManager.detectWireguardInterfaces(req);
 
     if (!interfaces || interfaces.length === 0) {
       return res.status(404).json({ message: 'No WireGuard interfaces found.' });
@@ -23,6 +23,8 @@ server.get('/interfaces', async (req, res) => {
       address: iface.address,            // Interface address
       port: iface.port,                  // Listening port (or 'Unknown')
       peerCount: iface.peerCount,        // Number of peers
+      isConnected: iface.isConnected,     // Connection status
+      transferData: iface.transferData    // Data Transfers
     }));
 
     // Send the interface details as a response
@@ -239,14 +241,14 @@ server.post('/toggle/:name', async (req, res) => {
     await fs.access(configFilePath);
 
     // Retrieve the current status of all interfaces
-    const interfaces = await wgManager.detectWireguardInterfaces(req);
+    const interfaces = await wgManager.detectWireguardInterfaces();
     const interfaceDetails = interfaces.find(iface => iface.name === name);
 
     if (!interfaceDetails) {
       return res.status(404).json({ error: `Interface ${name} not found.` });
     }
 
-    const currentStatus = interfaceDetails.status === 'active' ? 'up' : 'down';
+    const currentStatus = interfaceDetails.isConnected === 'Active' ? 'up' : 'down';
 
     // Compare requested status with current status
     if (currentStatus === status) {
@@ -328,4 +330,24 @@ server.get('/check', async (req, res) => {
   });
 });
 
+// API endpoint to get peers
+server.get('/interface/:id/peers', async (req, res) => {
+  const { id: interfaceName } = req.params;
+
+  try {
+    // Fetch peers for the specified interface
+    const peers = await wgManager.getPeersForInterface(interfaceName);
+
+    // If no peers are found
+    if (!peers.length) {
+      return res.status(404).json({ message: `No peers found for interface ${interfaceName}` });
+    }
+
+    // Return the peers as a response
+    return res.json(peers);
+  } catch (error) {
+    console.error(`Error retrieving peers for interface ${interfaceName}:`, error);
+    return res.status(500).json({ error: `Failed to retrieve peers for interface ${interfaceName}` });
+  }
+});
 module.exports = server;
