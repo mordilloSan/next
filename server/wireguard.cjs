@@ -36,6 +36,57 @@ server.get('/interfaces', async (req, res) => {
   }
 });
 
+server.get('/interface/:id/details', async (req, res) => {
+  const { id: interfaceName } = req.params;
+
+  try {
+    // Fetch interface data and transfer data using detectWireguardInterfaces
+    const interfaces = await wgManager.detectWireguardInterfaces(req);
+    const selectedInterface = interfaces.find((iface) => iface.name === interfaceName);
+
+    if (!selectedInterface) {
+      return res.status(404).json({ message: `Interface ${interfaceName} not found.` });
+    }
+
+    // Read the config file to extract the public key
+    const configFilePath = path.join(WG_CONFIG_DIR, `${interfaceName}.conf`);
+    const configFile = await fs.readFile(configFilePath, 'utf8');
+
+    // Extract the public key from the config file (from the [Interface] section)
+    const publicKeyMatch = configFile.match(/PrivateKey\s*=\s*(.+)/);
+    const publicKey = publicKeyMatch ? publicKeyMatch[1].trim() : 'Unknown';
+
+    // Fetch the latest transfer data (with rates calculated)
+    const transferData = await wgManager.detectWireguardDataTransfer(req, interfaceName);
+
+    // Format the response data
+    const responseData = {
+      name: selectedInterface.name,
+      address: selectedInterface.address,
+      port: selectedInterface.port,
+      publicKey, // Use extracted public key
+      totalUsage: transferData.reduce((acc, peer) => acc + peer.sentBytes + peer.receivedBytes, 0) / (1024 * 1024 * 1024), // GB
+      totalReceived: transferData.reduce((acc, peer) => acc + peer.receivedBytes, 0) / (1024 * 1024 * 1024), // GB
+      totalSent: transferData.reduce((acc, peer) => acc + peer.sentBytes, 0) / (1024 * 1024 * 1024), // GB
+      numberPeers: selectedInterface.peerCount,
+      status: selectedInterface.isConnected,
+      peers: transferData.map(peer => ({
+        publicKey: peer.peerKey,
+        sentBytes: (peer.sentBytes / (1024 * 1024 * 1024)).toFixed(3), // Convert to GB
+        receivedBytes: (peer.receivedBytes / (1024 * 1024 * 1024)).toFixed(3), // Convert to GB
+        totalBytes: ((peer.sentBytes + peer.receivedBytes) / (1024 * 1024 * 1024)).toFixed(3), // Convert to GB
+        sentRate: peer.sentRate, // Include the rate for data sent
+        receivedRate: peer.receivedRate, // Include the rate for data received
+      })),
+    };
+
+    res.json(responseData);
+  } catch (error) {
+    console.error(`Error retrieving interface details for ${interfaceName}:`, error);
+    res.status(500).json({ error: `Failed to retrieve details for interface ${interfaceName}.` });
+  }
+});
+
 // API endpoint to create a WireGuard interface
 server.post('/create', async (req, res) => {
   const { serverName, port, CIDR, peers, nic } = req.body;

@@ -10,37 +10,25 @@ class WireGuardManager {
     this.configDir = WG_CONFIG_DIR;
   }
 
-  async getHardwareInfo(req) {
-    const { user } = req.session;
-    const password = user?.password;
-    const data = await executeSudoCommand('lshw -C network', password);
-    const hardwareInfo = {};
-
-    const blocks = data.split('\n  *-network').slice();
-    blocks.forEach(block => {
-      const lines = block.trim().split('\n');
-      let iface = {};
-      let logicalName = '';
-
-      lines.forEach(line => {
-        line = line.trim();
-
-        if (line.startsWith('logical name:')) {
-          logicalName = line.split(':')[1].trim();
-          iface.logicalName = logicalName;
-        } else if (line.startsWith('product:')) {
-          iface.product = line.split(':')[1].trim();
-        } else if (line.startsWith('vendor:')) {
-          iface.vendor = line.split(':')[1].trim();
-        } else if (line.startsWith('description:')) {
-          iface.description = line.split(':')[1].trim();
-        }
-      });
-
-      hardwareInfo[logicalName] = iface;
-    });
-
-    return hardwareInfo;
+  async getHardwareInfo() {
+    try {
+      const networkData = await si.networkInterfaces();
+      const physicalInterfaces = networkData.filter(iface => !iface.virtual && iface.operstate === 'up');
+      const hardwareInfo = physicalInterfaces.reduce((info, iface) => {
+        info[iface.iface] = {
+          logicalName: iface.iface,
+          product: iface.model || 'N/A',
+          vendor: iface.vendor || 'N/A',
+          description: iface.type || 'N/A',
+        };
+        return info;
+      }, {});
+  
+      return hardwareInfo;
+    } catch (error) {
+      console.error('Error fetching hardware info:', error);
+      throw new Error('Failed to retrieve hardware information');
+    }
   }
 
   async makeSureDirExists(dirPath) {
@@ -242,7 +230,6 @@ class WireGuardManager {
       }];
     }
   }
-
 
   async detectWireguardInterfaces(req) {
     try {
