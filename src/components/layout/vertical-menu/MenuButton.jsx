@@ -39,7 +39,7 @@ export const menuButtonStyles = (props) => {
       color: "#adadad",
     }),
 
-    // All the active styles are applied to the button including menu items or submenu
+    // All the active styles are applied to the button including menu items
     [`&.${menuClasses.active}`]: {
       ...(!children && { color: "white" }),
       backgroundColor: children ? "#f3f3f3" : "#765feb",

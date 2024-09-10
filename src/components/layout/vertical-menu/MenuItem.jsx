@@ -67,7 +67,7 @@ const MenuItem = (props, ref) => {
     // If the menuItemStyles prop is provided, get the styles for the specified element.
     if (menuItemStyles) {
       // Define the parameters that are passed to the style functions.
-      const params = { level, disabled, active, isSubmenu: false };
+      const params = { level, disabled, active };
 
       // Get the style function for the specified element.
       const styleFunction = menuItemStyles[element];

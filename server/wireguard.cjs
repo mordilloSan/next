@@ -241,7 +241,7 @@ server.post('/toggle/:name', async (req, res) => {
     await fs.access(configFilePath);
 
     // Retrieve the current status of all interfaces
-    const interfaces = await wgManager.detectWireguardInterfaces();
+    const interfaces = await wgManager.detectWireguardInterfaces(req);
     const interfaceDetails = interfaces.find(iface => iface.name === name);
 
     if (!interfaceDetails) {

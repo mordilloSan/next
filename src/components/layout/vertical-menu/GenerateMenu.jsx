@@ -2,11 +2,7 @@
 import Chip from "@mui/material/Chip";
 
 // Component Imports
-import {
-  SubMenu as VerticalSubMenu,
-  MenuItem as VerticalMenuItem,
-  MenuSection,
-} from "@/theme/styles/vertical";
+import { MenuItem as VerticalMenuItem } from "@/theme/styles/vertical";
 
 // Generate a menu from the menu data array
 export const GenerateVerticalMenu = ({ menuData }) => {
@@ -14,46 +10,8 @@ export const GenerateVerticalMenu = ({ menuData }) => {
   const renderMenuItems = (data) => {
     // Use the map method to iterate through the array of menu data
     return data.map((item, index) => {
-      const menuSectionItem = item;
-      const subMenuItem = item;
       const menuItem = item;
 
-      // Check if the current item is a section
-      if (menuSectionItem.isSection) {
-        const { children, isSection, ...rest } = menuSectionItem;
-
-        // If it is, return a MenuSection component and call generateMenu with the current menuSectionItem's children
-        return (
-          <MenuSection key={index} {...rest}>
-            {children && renderMenuItems(children)}
-          </MenuSection>
-        );
-      }
-
-      // Check if the current item is a sub menu
-      if (subMenuItem.children) {
-        const { children, icon, prefix, suffix, ...rest } = subMenuItem;
-        const Icon = icon ? <i className={icon} /> : null;
-        const subMenuPrefix =
-          prefix && prefix.label ? <Chip size="small" {...prefix} /> : prefix;
-        const subMenuSuffix =
-          suffix && suffix.label ? <Chip size="small" {...suffix} /> : suffix;
-
-        // If it is, return a SubMenu component and call generateMenu with the current subMenuItem's children
-        return (
-          <VerticalSubMenu
-            key={index}
-            prefix={subMenuPrefix}
-            suffix={subMenuSuffix}
-            {...rest}
-            {...(Icon && { icon: Icon })}
-          >
-            {children && renderMenuItems(children)}
-          </VerticalSubMenu>
-        );
-      }
-
-      // If the current item is neither a section nor a sub menu, return a MenuItem component
       const { label, icon, prefix, suffix, ...rest } = menuItem;
 
       // Localize the href

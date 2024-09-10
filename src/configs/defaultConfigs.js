@@ -8,4 +8,3 @@ export const defaultBreakpoints = {
   always: "always",
 };
 export const verticalNavToggleDuration = 300;
-export const verticalSubMenuToggleDuration = 300;

@@ -46,7 +46,7 @@ export const confirmUrlInChildren = (children, url) => {
 };
 
 /*
- * Render all the icons for Menu Item and SubMenu components for all the levels more than 0
+ * Render all the icons for Menu Item and components for all the levels more than 0
  */
 export const renderMenuIcon = (params) => {
   const {

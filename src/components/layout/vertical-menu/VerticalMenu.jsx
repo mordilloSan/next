@@ -5,7 +5,6 @@ import { Menu, MenuItem } from "@/theme/styles/vertical";
 import useVerticalNav from "../NavBar/useVerticalNav";
 import StyledVerticalNavExpandIcon from "@/theme/styles/vertical/StyledVerticalNavExpandIcon";
 import menuItemStyles from "@/theme/styles/vertical/menuItemStyles";
-import menuSectionStyles from "@/theme/styles/vertical/menuSectionStyles";
 import routes from "@/configs/routes";
 import { Icon } from "@iconify/react";
 
@@ -46,7 +45,6 @@ const VerticalMenu = ({ scrollMenu }) => {
           />
         )}
         renderExpandedMenuItemIcon={{ icon: <i className="ri-circle-line" /> }}
-        menuSectionStyles={menuSectionStyles(verticalNavOptions, theme)}
       >
         {routes.map((route) => (
           <MenuItem

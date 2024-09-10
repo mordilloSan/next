@@ -27,18 +27,17 @@ const menuItemStyles = (verticalNavOptions, theme) => {
         : {
             marginBlockStart: 0,
           }),
-      [`&.${menuClasses.subMenuRoot}.${menuClasses.open} > .${menuClasses.button}, &.${menuClasses.subMenuRoot} > .${menuClasses.button}.${menuClasses.active}`]:
-        {
-          backgroundColor: "var(--mui-palette-action-selected) !important",
-        },
+          [`& .${menuClasses.button}.${menuClasses.active}`]: {
+            backgroundColor: "var(--mui-palette-action-selected) !important",
+          },
+          
       [`&.${menuClasses.disabled} > .${menuClasses.button}`]: {
         color: "var(--mui-palette-text-disabled)",
         "& *": {
           color: "inherit",
         },
       },
-      [`&:not(.${menuClasses.subMenuRoot}) > .${menuClasses.button}.${menuClasses.active}`]:
-        {
+      [`.${menuClasses.button}.${menuClasses.active}`]: {
           ...(popoutCollapsed && level > 0
             ? {
                 backgroundColor: "var(--mui-palette-primary-lightOpacity)",
@@ -139,31 +138,6 @@ const menuItemStyles = (verticalNavOptions, theme) => {
     suffix: {
       marginInlineStart: theme.spacing(2),
     },
-    subMenuExpandIcon: {
-      fontSize: "1.375rem",
-      marginInlineStart: theme.spacing(2),
-      "& i, & svg": {
-        fontSize: "inherit",
-      },
-    },
-    subMenuContent: ({ level }) => ({
-      zIndex: "calc(var(--drawer-z-index) + 1)",
-      backgroundColor: popoutCollapsed
-        ? "var(--mui-palette-background-paper)"
-        : "transparent",
-      ...(popoutCollapsed &&
-        level === 0 && {
-          paddingBlock: theme.spacing(2),
-          boxShadow: "var(--mui-customShadows-lg)",
-          '[data-skin="bordered"] ~ [data-floating-ui-portal] &': {
-            boxShadow: "none",
-            border: "1px solid var(--mui-palette-divider)",
-          },
-          [`& .${menuClasses.button}`]: {
-            paddingInline: theme.spacing(4),
-          },
-        }),
-    }),
   };
 };
 
