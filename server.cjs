@@ -59,7 +59,7 @@ app.prepare().then(() => {
   server.use("/api/wireguard", wireguardRoutes);
 
   // Handle all other routes with Next.js
-  server.all('*', (req, res) => { return handle(req, res); });
+  server.use((req, res) => handle(req, res));
 
   // Start server with HTTPS
   pem.createCertificate({ days: 365, selfSigned: true }, (err, keys) => {
