@@ -27,7 +27,6 @@ TO DO
 
 sudo apt update (and similar for other distro) to refresh the package index. => update API. make this a scheduled event? once in 24h?
 detect a system restart needed
-change in the update part from a circular progress, to a progress bar
 Implement dbus-next!!!!! This is big....
 Implement websocket!!!!!
-Custom fetch for post and delete
+cache changelog in updates
