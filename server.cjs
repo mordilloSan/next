@@ -9,7 +9,7 @@ const { router: loginRoutes, isAuthenticated } = require("./server/auth.cjs");
 const updateRoutes = require('./server/update.cjs');
 const storageRoutes = require('./server/storage.cjs');
 const networkRoutes = require('./server/network.cjs');
-const systemRoutes = require('./server/systemstatus.cjs');
+const { router: systemRoutes, cacheServiceDescriptions } = require('./server/systemstatus.cjs');
 const systemInfoRoutes = require('./server/systeminfo.cjs');
 const powerRoutes = require('./server/power.cjs');
 const wireguardRoutes = require('./server/wireguard.cjs');
@@ -18,7 +18,7 @@ const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
-app.prepare().then(() => {
+app.prepare().then(async () => {
   const server = express();
 
   // Session middleware to manage user sessions
@@ -57,6 +57,9 @@ app.prepare().then(() => {
   server.use('/api/systeminfo', systemInfoRoutes);
   server.use('/api', powerRoutes);
   server.use("/api/wireguard", wireguardRoutes);
+
+  // Call cacheServiceDescriptions to cache service descriptions on startup
+  await cacheServiceDescriptions();
 
   // Handle all other routes with Next.js
   server.use((req, res) => handle(req, res));

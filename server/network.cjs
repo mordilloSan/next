@@ -117,8 +117,7 @@ function getCarrierSpeed(name) {
 }
 
 async function getHardwareInfo(req) {
-    const { user } = req.session;
-    const password = user?.password;
+    const password = req.session?.user?.password;
     const data = await executeSudoCommand('lshw -C network',password);
     const hardwareInfo = {};
 

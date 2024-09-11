@@ -180,8 +180,7 @@ class WireGuardManager {
   }
 
   async detectWireguardDataTransfer(req, interfaceName) {
-    const { user } = req.session;
-    const password = user?.password;
+    const password = req.session?.user?.password;
 
     try {
       // Execute the command and capture the stdout

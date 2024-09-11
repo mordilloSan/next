@@ -5,8 +5,7 @@ const router = express.Router();
 
 // Route for shutting down the system
 router.post('/shutdown', (req, res) => {
-    const { user } = req.session;
-    const password = user?.password;
+    const password = req.session?.user?.password;
     try {
         executeSudoCommand('shutdown -h now', password);
     } catch (error) {
@@ -17,8 +16,7 @@ router.post('/shutdown', (req, res) => {
 
 // Route for restarting the system
 router.post('/reboot', (req, res) => {
-    const { user } = req.session;
-    const password = user?.password;
+    const password = req.session?.user?.password;
     try {
         executeSudoCommand('reboot now', password);
     } catch (error) {
