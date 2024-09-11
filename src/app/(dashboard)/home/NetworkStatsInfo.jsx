@@ -55,7 +55,7 @@ const NetworkStatsInfo = () => {
     extractNetworkStats(data);
 
   return (
-    <Box sx={{ display: "flex", gap: 1, flexDirection: "column", mt: -3.5 }}>
+    <Box sx={{ display: "flex", gap: 1, flexDirection: "column" }}>
       <Typography variant="body1">
         <strong>Total Interfaces:</strong> {totalInterfaces}
       </Typography>

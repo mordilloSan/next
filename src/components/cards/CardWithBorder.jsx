@@ -44,10 +44,10 @@ const CardWithBorder = (props) => {
       sx={{
         height: stats2
           ? {
-              xs: 340,
-              sm: 340,
-              xl: cardHeight,
-            }
+            xs: 340,
+            sm: 340,
+            xl: cardHeight,
+          }
           : cardHeight,
         m: 1,
         display: "flex",
@@ -71,17 +71,16 @@ const CardWithBorder = (props) => {
           </CustomAvatar>
         </Box>
         {stats2 ? (
-          <Box
-            sx={{ mt: 2, display: "flex", flexDirection: { xs: "column", sm: "column", xl: "row" }, gap: 2, alignItems: { xs: "center", sm: "center", xl: "flex-start" }}}>
-            <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
+          <Box sx={{ mt: 3, display: "flex", flexDirection: { xs: "column", sm: "column", xl: "row" } }}>
+            <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
               {stats}
             </Box>
-            <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
+            <Box sx={{flex: { xl: 1 },  display: "flex", height: 120, alignItems: "center", justifyContent: "center" }}>
               {stats2}
             </Box>
           </Box>
         ) : (
-          <Box sx={{ mt: 2 }}>{stats}</Box>
+          <Box sx={{ mt: 3 }}>{stats}</Box>
         )}
       </CardContent>
     </HoverableCard>
