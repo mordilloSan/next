@@ -20,10 +20,9 @@ check conf of clients and server?
 
 packagekit
 
-TO DO
+3 GENERAL
 
 sudo apt update (and similar for other distro) to refresh the package index. => update API. make this a scheduled event? once in 24h?
 detect a system restart needed
 Implement dbus-next!!!!! This is big....
 Implement websocket!!!!!
-cache changelog in updates
