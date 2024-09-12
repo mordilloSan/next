@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Button } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import CreateInterfaceDialog from "./CreateInterfaceDialog";
-import { useAuthenticatedPost } from "@/utils/customFetch"; // Import the custom post hook
+import { useAuthenticatedPost, useAuthenticatedFetch } from "@/utils/customFetch";
 
 const CreateInterfaceButton = () => {
   const [serverName, setServerName] = useState("wg0");
@@ -16,26 +16,47 @@ const CreateInterfaceButton = () => {
   const [loading, setLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const customPost = useAuthenticatedPost();
+  const customFetch = useAuthenticatedFetch();
 
   // Fetch the WireGuard interfaces
-  const { refetch } = useQuery({
-    queryKey: ["WGinterfaces"],
+  const { refetch } = useQuery({queryKey: ["WGinterfaces"]});
+
+  // Fetch network info
+  const { data: networkData, isLoading: networkLoading, error: networkError } = useQuery({
+    queryKey: ["networkInfo"],
+    queryFn: () => customFetch(`/api/network`),
   });
+
+  // Function to extract physical NICs
+  function getPhysicalNICs(data) {
+    const interfaces = data?.interfaces || {};
+    const physicalNICs = [];
+
+    Object.keys(interfaces).forEach((nic) => {
+      const nicData = interfaces[nic];
+      const isPhysicalNIC = nic.startsWith("enp") && nicData.hardware && nicData.hardware.description;
+      if (isPhysicalNIC) { physicalNICs.push(nic); }
+    });
+    return physicalNICs;
+  }
 
   const handleCreateInterface = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      await customPost("/api/wireguard/create", { serverName, port, CIDR, peers, nic, });
+      await customPost("/api/wireguard/create", { serverName, port, CIDR, peers, nic });
       setShowDialog(false);
       refetch();
     } catch (error) {
       console.error("Failed to create WireGuard interface:", error);
+      setError("Failed to create interface");
     } finally {
       setLoading(false);
     }
   };
+
+  const availableNICs = networkLoading || networkError ? [] : getPhysicalNICs(networkData);
 
   return (
     <>
@@ -58,10 +79,9 @@ const CreateInterfaceButton = () => {
         setPeers={setPeers}
         nic={nic}
         setNic={setNic}
+        availableNICs={availableNICs}
       />
     </>
-
-
   );
 };
 

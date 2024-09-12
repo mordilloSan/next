@@ -14,6 +14,7 @@ function makeQueryClient() {
       queries: {
         retry: 1,
         refetchOnWindowFocus: false,
+        staleTime: 60000,  // Data stays fresh for 60 seconds
       }
     },
   });

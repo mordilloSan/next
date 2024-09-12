@@ -12,7 +12,7 @@
  * Another way is to clear the cookie from the browser's Application/Storage tab and then reload the page.
  */
 const themeConfig = {
-  templateName: "LSMT",
+  templateName: "Linux IO",
   homePageUrl: "/home",
   settingsCookieName: "lsmt",
   mode: "dark", // 'light', 'dark'

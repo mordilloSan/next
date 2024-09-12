@@ -9,7 +9,7 @@ import RouterLink from "@/components/RouterLink";
 
 const NetworkStatsTable = () => {
   const customFetch = useAuthenticatedFetch();
-  const { data: networkInfo } = useQuery({
+  const { data: networkInfo, isLoading: networkInfoLoading, error: networkInfoError } = useQuery({
     queryKey: ["networkInfo"],
     queryFn: () => customFetch(`/api/network`),
     refetchInterval: 1000,

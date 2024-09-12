@@ -10,7 +10,7 @@ import QueryProvider from "@/components/query";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata = {
-  title: "LSMT - Linux Server Management Tool",
+  title: "Linux IO - Linux Server Management Tool",
   description: "Linux Server Management Tool - made with Materio",
 };
 

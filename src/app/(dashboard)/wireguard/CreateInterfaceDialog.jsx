@@ -1,7 +1,7 @@
 import React from "react";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Alert, } from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Alert, FormControl, InputLabel, Select, MenuItem, } from "@mui/material";
 
-const CreateInterfaceDialog = ({ open, onClose, onCreate, loading, error, serverName, setServerName, port, setPort, CIDR, setCIDR, peers, setPeers, nic, setNic}) => {
+const CreateInterfaceDialog = ({ open, onClose, onCreate, loading, error, serverName, setServerName, port, setPort, CIDR, setCIDR, peers, setPeers, nic, setNic, availableNICs, }) => {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>Create New Interface</DialogTitle>
@@ -11,11 +11,22 @@ const CreateInterfaceDialog = ({ open, onClose, onCreate, loading, error, server
           <TextField label="Port" type="number" value={port} onChange={(e) => setPort(e.target.value)} fullWidth margin="normal" />
           <TextField label="CIDR" value={CIDR} onChange={(e) => setCIDR(e.target.value)} fullWidth margin="normal" />
           <TextField label="Peers" type="number" value={peers} onChange={(e) => setPeers(e.target.value)} fullWidth margin="normal" />
-          <TextField label="NIC" type="string" value={nic} onChange={(e) => setNic(e.target.value)} fullWidth margin="normal" />
+          {/* NIC Selector Dropdown */}
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="nic-select-label">NIC</InputLabel>
+            <Select labelId="nic-select-label" value={nic} onChange={(e) => setNic(e.target.value)} label="NIC">
+              {availableNICs.length === 0 ? (
+                <MenuItem disabled>No NICs Available</MenuItem>
+              ) : (
+                availableNICs.map((nicOption) => (
+                  <MenuItem key={nicOption} value={nicOption}> {nicOption}</MenuItem>
+                ))
+              )}
+            </Select>
+          </FormControl>
+
           {error && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {error}
-            </Alert>
+            <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>
           )}
         </Box>
       </DialogContent>

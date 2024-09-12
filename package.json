@@ -1,6 +1,6 @@
 {
-  "name": "LSMT",
-  "version": "0.20",
+  "name": "Linux IO",
+  "version": "0.30",
   "license": "MIT",
   "private": true,
   "type": "module",
