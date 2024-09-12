@@ -3,11 +3,11 @@ const { networkInterfaces } = require('os');
 const { stat, mkdir, readdir, readFile } = require('fs').promises;
 const { executeCommand, executeSudoCommand } = require('./executer.cjs');
 const path = require('path');
-const WG_CONFIG_DIR = '/etc/wireguard';
+const config = require('./config.cjs');
 
 class WireGuardManager {
   constructor() {
-    this.configDir = WG_CONFIG_DIR;
+    this.configDir = config.WG_CONFIG_DIR;
   }
 
   async getHardwareInfo() {

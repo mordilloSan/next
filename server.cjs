@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const pem = require('pem');
 
 const { router: loginRoutes, isAuthenticated } = require("./server/auth.cjs");
-const updateRoutes = require('./server/update.cjs');
+const { server: updateRoutes, cacheUpdateHistory } = require('./server/update.cjs');
 const storageRoutes = require('./server/storage.cjs');
 const networkRoutes = require('./server/network.cjs');
 const { router: systemRoutes, cacheServiceDescriptions } = require('./server/systemstatus.cjs');
@@ -59,7 +59,9 @@ app.prepare().then(async () => {
   server.use("/api/wireguard", wireguardRoutes);
 
   // Call cacheServiceDescriptions to cache service descriptions on startup
+  console.log("Starting API's");
   await cacheServiceDescriptions();
+  await cacheUpdateHistory();
 
   // Handle all other routes with Next.js
   server.use((req, res) => handle(req, res));

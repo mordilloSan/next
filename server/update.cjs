@@ -2,16 +2,23 @@ const express = require('express');
 const os = require('os');
 const fs = require('fs');
 const { executeCommand, executeSudoCommand } = require('./executer.cjs');
-
+const config = require('./config.cjs');
 const server = express.Router();
 
 // Constants
+
+// Cache for update history
+let updateHistoryCache = null;
+let lastUpdateTime = null;
 const NA = "N/A";
-const OS_RELEASE_PATH = "/etc/os-release";
 
 // Cache package manager info for reuse
 let packageManagerCache = null;
 
+// Cache for changelogs with timestamps
+let changelogCache = {};
+
+// Package managers
 const packageManagers = {
   ubuntu: { pm: "apt list --upgradable 2>/dev/null", historyCmd: "zcat /var/log/apt/history.log.* ; cat /var/log/apt/history.log", changelogCmd: "apt-get changelog" },
   debian: this.ubuntu,
@@ -29,7 +36,7 @@ const getPackageManager = () => {
     const platform = os.platform();
     if (platform !== 'linux') throw new Error("Unsupported operating system");
 
-    const osRelease = fs.readFileSync(OS_RELEASE_PATH, "utf8");
+    const osRelease = fs.readFileSync(config.OS_RELEASE_PATH, "utf8");
     const idLine = osRelease.split("\n").find((line) => line.startsWith("ID="));
     const distro = idLine ? idLine.split("=")[1].replace(/"/g, "") : null;
 
@@ -43,8 +50,18 @@ const getPackageManager = () => {
   }
 };
 
-// Helper function to fetch changelog
+// Helper function to fetch changelog (with caching and TTL)
 async function fetchChangelog(packageName, newVersion, changelogCmd) {
+  const cacheKey = `${packageName}:${newVersion}`;
+
+  // Check if cache exists and is still valid (within TTL)
+  const cachedEntry = changelogCache[cacheKey];
+  const now = Date.now();
+
+  if (cachedEntry && (now - cachedEntry.timestamp < config.CACHE_TTL)) {
+    return cachedEntry.data;
+  }
+
   try {
     const changelogCommand = `${changelogCmd} ${packageName} | awk -v version="${newVersion}" '
                             /^\\S+ \\([0-9][^)]*\\)/ {
@@ -53,7 +70,15 @@ async function fetchChangelog(packageName, newVersion, changelogCmd) {
                             }
                             found'`;
     const changelogOutput = await executeCommand(changelogCommand);
-    return changelogOutput.split('\n').filter(line => line.trim() !== "");
+    const changelog = changelogOutput.split('\n').filter(line => line.trim() !== "");
+
+    // Update cache with new changelog and timestamp
+    changelogCache[cacheKey] = {
+      data: changelog,
+      timestamp: now,
+    };
+
+    return changelog;
   } catch (error) {
     console.error(`Failed to fetch changelog for ${packageName}: ${error.message}`);
     return [NA];
@@ -105,12 +130,20 @@ server.get('/status', async (req, res) => {
   }
 });
 
-// Route to fetch update history
-server.get('/update-history', async (req, res) => {
+// Function to fetch and process update history, with caching
+async function cacheUpdateHistory(forceRefresh = false) {
+  const now = Date.now();
+
+  // If cache exists and is still valid, return cached data
+  if (!forceRefresh && updateHistoryCache && (now - lastUpdateTime < config.CACHE_TTL)) {
+    return updateHistoryCache;
+  }
+
   try {
-    const { historyCmd } = getPackageManager();
+    const { historyCmd } = getPackageManager();  // Reuse the getPackageManager function
     const result = await executeCommand(historyCmd);
 
+    // Process the result into a structured format
     const historyByDate = result
       .split("Start-Date:")
       .filter(Boolean)
@@ -127,12 +160,28 @@ server.get('/update-history', async (req, res) => {
         return acc;
       }, {});
 
+    // Sort the history by date
     const sortedHistory = Object.keys(historyByDate)
       .filter(date => historyByDate[date].upgrades.length > 0)
       .sort((a, b) => new Date(b) - new Date(a))
       .map(date => ({ date, upgrades: historyByDate[date].upgrades }));
 
-    res.json(sortedHistory);
+    // Cache the fetched history
+    updateHistoryCache = sortedHistory;
+    lastUpdateTime = now;
+    console.log('Update history cached successfully.');
+    return sortedHistory; // Return the processed update history
+  } catch (err) {
+    console.error("Failed to fetch update history:", err);
+    throw new Error('Failed to fetch update history');
+  }
+}
+
+// Route to fetch update history
+server.get('/update-history', async (req, res) => {
+  try {
+    const updateHistory = await cacheUpdateHistory(); // This will serve cached data if available
+    res.json(updateHistory);
   } catch (err) {
     console.error("Failed to fetch update history:", err);
     res.status(500).json({
@@ -159,4 +208,4 @@ server.post('/update-package', async (req, res) => {
   }
 });
 
-module.exports = server;
+module.exports = { server, cacheUpdateHistory };

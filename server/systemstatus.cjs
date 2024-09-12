@@ -2,27 +2,36 @@
 
 const express = require('express');
 const { executeCommand } = require('./executer.cjs');
+const config = require('./config.cjs');
 
 const router = express.Router();
 const serviceDescriptionCache = new Map(); // Cache for descriptions
 
 // Helper to fetch service description with cache
 async function getServiceDescription(service) {
-    if (serviceDescriptionCache.has(service)) {
-        return serviceDescriptionCache.get(service);
+    const now = Date.now();
+    const cachedEntry = serviceDescriptionCache.get(service);
+
+    // Check if the service is cached and the cache entry has not expired
+    if (cachedEntry && (now - cachedEntry.timestamp < config.CACHE_TTL)) {
+        return cachedEntry.description;  // Return cached description if not expired
     }
+
+    // Fetch the description if not cached or expired
     const command = `systemctl show ${service} --property=Description`;
     try {
         const result = await executeCommand(command);
         const description = result.split('=')[1]?.trim() || 'No description available';
-        serviceDescriptionCache.set(service, description);
+
+        // Cache the description with the current timestamp
+        serviceDescriptionCache.set(service, { description, timestamp: now });
+
         return description;
     } catch (error) {
         console.error(`Error getting description for ${service}: ${error}`);
         return 'No description available';
     }
 }
-
 // Helper to parse service data
 function parseServiceLine(line) {
     const parts = line.trim().match(/^(\S+)\s+(\S+)\s*(\S+)?$/);
@@ -56,8 +65,9 @@ router.get('/services', async (req, res) => {
         }
 
         services.forEach(service => {
-            service.description = serviceDescriptionCache.get(service.name);
+            service.description = serviceDescriptionCache.get(service.name)?.description || 'No description available';
         });
+        
 
         res.json({ services });
     } catch (error) {
@@ -108,6 +118,7 @@ router.get('/service/:name', async (req, res) => {
 
 // Add a new function to cache services when the server starts
 async function cacheServiceDescriptions() {
+    const now = Date.now();  // Cache timestamp at the time of caching
     try {
         const command = 'systemctl list-unit-files --type=service --all';
         const result = await executeCommand(command);
@@ -118,7 +129,7 @@ async function cacheServiceDescriptions() {
 
         await Promise.all(servicesToCache.map(async (service) => {
             const description = await getServiceDescription(service.name);
-            serviceDescriptionCache.set(service.name, description);
+            serviceDescriptionCache.set(service.name, { description, timestamp: now });  // Store both description and timestamp
         }));
 
         console.log('Service descriptions cached successfully.');

@@ -3,7 +3,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const { executeCommand } = require('./executer.cjs');
 const wgManager = require('./wgManager.cjs');
-const WG_CONFIG_DIR = '/etc/wireguard';
+const config = require('./config.cjs');
 const server = express.Router();
 const QRCode = require('qrcode');
 
@@ -49,7 +49,7 @@ server.get('/interface/:id/details', async (req, res) => {
     }
 
     // Read the config file to extract the public key
-    const configFilePath = path.join(WG_CONFIG_DIR, `${interfaceName}.conf`);
+    const configFilePath = path.join(config.WG_CONFIG_DIR, `${interfaceName}.conf`);
     const configFile = await fs.readFile(configFilePath, 'utf8');
 
     // Extract the public key from the config file (from the [Interface] section)
@@ -149,7 +149,7 @@ PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -
 `;
 
     // Ensure the server directory exists
-    const serverDirPath = path.join(WG_CONFIG_DIR, serverName);
+    const serverDirPath = path.join(config.WG_CONFIG_DIR, serverName);
     await fs.mkdir(serverDirPath, { recursive: true });
 
     // Add peer configurations to the server configuration
@@ -189,7 +189,7 @@ PersistentKeepalive = 25
     }
 
     // Write the server configuration to a file
-    const filePath = path.join(WG_CONFIG_DIR, `${serverName}.conf`);
+    const filePath = path.join(config.WG_CONFIG_DIR, `${serverName}.conf`);
     configContent = configContent.trim();
     await fs.writeFile(filePath, configContent);
     console.log(`Configuration file for ${serverName} written successfully.`);
@@ -215,8 +215,8 @@ server.delete('/delete/:name', async (req, res) => {
     return res.status(400).json({ error: 'Interface name is required.' });
   }
 
-  const configFilePath = path.join(WG_CONFIG_DIR, `${name}.conf`);
-  const clientFolderPath = path.join(WG_CONFIG_DIR, name); // Path to client (peer) configuration folder
+  const configFilePath = path.join(config.WG_CONFIG_DIR, `${name}.conf`);
+  const clientFolderPath = path.join(config.WG_CONFIG_DIR, name); // Path to client (peer) configuration folder
 
   try {
     // Check if the configuration file exists
@@ -285,7 +285,7 @@ server.post('/toggle/:name', async (req, res) => {
     return res.status(400).json({ error: 'Status must be either "up" or "down".' });
   }
 
-  const configFilePath = path.join(WG_CONFIG_DIR, `${name}.conf`);
+  const configFilePath = path.join(config.WG_CONFIG_DIR, `${name}.conf`);
 
   try {
     // Check if the config file exists
@@ -360,7 +360,7 @@ server.get('/check', async (req, res) => {
 
     try {
       // Ensure the WireGuard directory exists
-      directoryMessage = await wgManager.makeSureDirExists(WG_CONFIG_DIR);
+      directoryMessage = await wgManager.makeSureDirExists(config.WG_CONFIG_DIR);
       directoryStatus = "ok";
     } catch (dirError) {
       directoryStatus = "not ok";

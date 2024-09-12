@@ -1,25 +1,22 @@
 we need to have installed:
 
-FOR SENSORS API
+FOR SENSORS API: lm-sensors
+FOR PAM:
 
-lm-sensors
+- Centos and RHEL: yum install pam-devel
+- Debian/Ubuntu: apt-get install libpam0g-dev
+- debian6/maverick/natty: apt-get install libreadline5-dev
 
-FOR PAM
 
-Centos and RHEL: yum install pam-devel
+TO DO
 
-Debian/Ubuntu: apt-get install libpam0g-dev
+1 FOR WIREGUARD
 
-debian6/maverick/natty: apt-get install libreadline5-dev
+cleanup code for backend.
+read only from files?
+check conf of clients and server?
 
-oneiric (and any newer, eg. Debian 7 or Ubuntu 12.04): apt-get install libreadline-gplv2-dev
-
-FOR WIREGUARD
-
-wireguard
-cmake (testing for wireguard C++ manager - https://github.com/Sirherobrine23/Wireguard-tools.js.git)
-
-FOR PACKAGE UPGRADE
+2 FOR PACKAGE UPGRADE
 
 packagekit
 
