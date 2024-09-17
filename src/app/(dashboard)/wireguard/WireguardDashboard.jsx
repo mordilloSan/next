@@ -24,12 +24,29 @@ const WireGuardDashboard = () => {
     refetchInterval: 50000,
   });
 
+  // Fetch network info
+  const { data: networkData, isLoading: networkLoading, error: networkError } = useQuery({
+    queryKey: ["networkInfo"],
+    queryFn: () => customFetch(`/api/network`),
+  });
+
   const handleDelete = async (interfaceName) => {
     try {
       await customDelete(`/api/wireguard/delete/${interfaceName}`);
       refetch();
+      setSelectedInterface(null);
     } catch (error) {
       console.error("Failed to delete WireGuard interface:", error);
+    }
+  };
+
+  const handleAddPeer = async (interfaceName, peerName) => {
+    try {
+      // Replace with the actual endpoint to add a peer
+      await customPost(`/api/wireguard/${interfaceName}/${peerName}/add`);
+      refetch();
+    } catch (error) {
+      console.error("Failed to add peer:", error);
     }
   };
 
@@ -95,7 +112,12 @@ const WireGuardDashboard = () => {
                               >
                                 <Delete />
                               </IconButton>
-                              <IconButton onClick={() => console.log("Edit action for", iface.name)}>
+                              <IconButton
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent the card click event
+                                  handleAddPeer(iface.name, "peerName"); // Replace "peerName" with actual value
+                                }}
+                              >
                                 <Edit />
                               </IconButton>
                             </Box>

@@ -34,8 +34,8 @@ const InterfaceDetails = ({ params }) => {
 
   const handleDeletePeer = async (peerName) => {
     try {
-      await customDelete(`/api/wireguard/peer/${peerName}/delete`);
-      refetch(); // Refetch data after deletion if needed
+      await customDelete(`/api/wireguard/${interfaceName}/${peerName}/remove`);
+      refetch();  // Refetch data to update the UI after deletion
     } catch (error) {
       console.error("Failed to delete peer:", error);
     }

@@ -45,7 +45,7 @@ const CreateInterfaceButton = () => {
     setError(null);
 
     try {
-      await customPost("/api/wireguard/create", { serverName, port, CIDR, peers, nic });
+      await customPost("/api/wireguard/create", { serverName, port, CIDR, peers, nic,  });
       setShowDialog(false);
       refetch();
     } catch (error) {

@@ -10,6 +10,44 @@ class WireGuardManager {
     this.configDir = config.WG_CONFIG_DIR;
   }
 
+  async restartWireGuardInterface(req, interfaceName) {
+    const password = req.session?.user?.password;
+    try {
+      // Check if the interface is already up by running `wg show`
+      const status = await executeSudoCommand(`wg show ${interfaceName}`,password);
+
+      // If the interface is not up, the output will be empty or indicate it's down
+      const isInterfaceUp = status && status.includes('interface');
+
+      if (isInterfaceUp) {
+        // If the interface is already up, bring it down and up again
+        console.log(`Restarting WireGuard interface ${interfaceName}...`);
+        await executeCommand(`wg-quick down ${interfaceName}`);
+        await executeCommand(`wg-quick up ${interfaceName}`);
+      } else {
+        // If the interface is not up, just bring it up
+        console.log(`Starting WireGuard interface ${interfaceName}...`);
+        await executeCommand(`wg-quick up ${interfaceName}`);
+      }
+
+      return { success: true, message: `Interface ${interfaceName} is now up and running.` };
+    } catch (error) {
+      console.error(`Error managing WireGuard interface ${interfaceName}:`, error);
+      return { success: false, error: `Failed to manage WireGuard interface: ${error.message}` };
+    }
+  };
+
+  // Helper function to increment an IP address
+  incrementIPAddress(ip) {
+    const ipParts = ip.split('.').map(Number);
+    for (let i = ipParts.length - 1; i >= 0; i--) {
+      ipParts[i]++;
+      if (ipParts[i] <= 255) break;
+      ipParts[i] = 0; // Reset to 0 and carry the increment to the next octet
+    }
+    return ipParts.join('.');
+  };
+
   async makeSureDirExists(dirPath) {
     try {
       const stats = await stat(dirPath);
@@ -104,7 +142,6 @@ class WireGuardManager {
   }
 
   detectUdpPortInUse(port, timeout = 5000) {
-    console.log(`Checking if UDP port ${port} is in use...`);
     return new Promise((resolve, reject) => {
       const udpTester = dgram.createSocket('udp4');
       let timeoutHandle;
@@ -220,29 +257,29 @@ class WireGuardManager {
   async getPeersForInterface(interfaceName) {
     try {
       const interfaceDir = path.join(this.configDir, interfaceName);  // Folder for the interface (e.g., wg7)
-      
+
       // Read all files in the interface's directory
       const files = await readdir(interfaceDir);
-      
+
       // Filter for peer config files (assuming they end with .conf)
       const peerConfFiles = files.filter(file => file.endsWith('.conf'));
-  
+
       const peers = [];
-  
+
       // Process each peer config file
       for (const peerFile of peerConfFiles) {
         const filePath = path.join(interfaceDir, peerFile);
         const fileContent = await readFile(filePath, 'utf8');
-  
+
         const peer = {
           name: peerFile.replace('.conf', ''),  // Use the filename as the peer's name
         };
-  
+
         // Split the file content into lines and process each line
         const lines = fileContent.split('\n');
         lines.forEach((line) => {
           line = line.trim();
-  
+
           if (line.startsWith('PrivateKey =')) {
             peer.privateKey = line.split('=')[1].trim();
           } else if (line.startsWith('PresharedKey =')) {
@@ -254,13 +291,13 @@ class WireGuardManager {
           } else if (line.startsWith('Address =')) {
             peer.addressIP = line.split('=')[1].trim();
           }
-          
+
         });
-  
+
         // Add peer to the peers array
         peers.push(peer);
       }
-  
+
       return peers;
     } catch (error) {
       console.error(`Error reading peer config files for interface ${interfaceName}:`, error);
@@ -268,7 +305,34 @@ class WireGuardManager {
     }
   }
 
+  async addPeer(availableIps, endPoint, port, serverPublicKey) {
+    const peerKeys = await this.generateKeys();
+    const serverConfigContent = `
+[Peer]
+PublicKey = ${peerKeys.publicKey}
+PresharedKey = ${peerKeys.preSharedKey}
+AllowedIPs = ${availableIps}/32
+`;
 
+    const peerConfigContent = `
+[Interface]
+Address = ${availableIps}/32
+PrivateKey = ${peerKeys.privateKey}
+ListenPort = ${port}
+
+[Peer]
+PublicKey = ${serverPublicKey}
+PresharedKey = ${peerKeys.preSharedKey}
+AllowedIPs = 0.0.0.0/0, ::/0
+Endpoint = ${endPoint}:${port}
+PersistentKeepalive = 25
+`.trim();
+
+    return {
+      serverConfigContent,
+      peerConfigContent,
+    };
+  }
 }
 
 module.exports = new WireGuardManager();

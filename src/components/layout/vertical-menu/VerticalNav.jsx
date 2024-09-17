@@ -32,7 +32,7 @@ import Image from "next/image";
 const VerticalNav = (props) => {
   // Props
   const {
-    width = 260,
+    width = 200,
     collapsedWidth = 80,
     defaultCollapsed = false,
     backgroundColor = "white",
