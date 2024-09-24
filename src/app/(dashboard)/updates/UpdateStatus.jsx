@@ -1,68 +1,24 @@
 "use client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import React, { useState } from "react";
 import { Typography, Box, Button, LinearProgress, Card } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CollapsibleTable from "@/components/tables/CollapsibleTable";
-import { useAuthenticatedFetch } from "@/utils/customFetch";
+import { useAuthenticatedFetch, useAuthenticatedPost } from "@/utils/customFetch";
 import LoadingIndicator from "@/components/LoadingIndicator";
 
 const UpdateStatus = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateProgress, setUpdateProgress] = useState(0);
   const [currentPackage, setCurrentPackage] = useState("");
-  const queryClient = useQueryClient();
   const customFetch = useAuthenticatedFetch();
+  const customPost = useAuthenticatedPost();
 
-  const { data: updateInfo, isLoading: loadingSystemInfo } = useQuery({
+  const { data: updateInfo, isLoading: loadingSystemInfo, refetch } = useQuery({
     queryKey: ["updateInfo"],
     queryFn: () => customFetch(`/api/updates/status`),
     refetchInterval: 50000,
     enabled: !isUpdating, // Disable the query while updating
-  });
-
-  const updatePackageMutation = useMutation({
-    mutationFn: async (packageName) => {
-      const controller = new AbortController();
-
-      try {
-        const response = await fetch(`/api/updates/update-package`, {
-          method: "POST",
-          body: JSON.stringify({ packageName }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-          signal: controller.signal,
-        });
-
-        if (response.status === 405) {
-          throw new Error(
-            "Method Not Allowed: The server does not support the requested HTTP method.",
-          );
-        }
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(
-            errorData.message ||
-              `Failed to update package: ${response.statusText}`,
-          );
-        }
-
-        return response.json();
-      } catch (error) {
-        if (error.name === "AbortError") {
-          throw new Error("Request timed out. Please try again.");
-        }
-        throw error;
-      }
-    },
-    onSuccess: (data, variables) => {
-      console.log(`${variables} updated successfully:`, data);
-    },
-    onError: (error, variables) => {
-      console.error(`Error updating package ${variables}:`, error.message);
-    },
   });
 
   const handleUpdateAll = async () => {
@@ -81,19 +37,17 @@ const UpdateStatus = () => {
 
       try {
         console.log(`Updating package: ${packageName}`);
-        await updatePackageMutation.mutateAsync(packageName);
+        await customPost(`/api/updates/update-package`, { packageName });
         setUpdateProgress(((i + 1) / totalPackages) * 100);
       } catch (error) {
-        console.error(
-          `Error updating package ${packageName}: ${error.message}`,
-        );
+        console.error(`Error updating package ${packageName}: ${error.message}`);
         continue;
       }
     }
 
     setIsUpdating(false);
     setCurrentPackage("");
-    await queryClient.invalidateQueries(["updateInfo"]); // Invalidate the query after all updates are done
+    refetch();
   };
 
   const columns = [

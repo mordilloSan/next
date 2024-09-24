@@ -1,35 +1,31 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Typography, Box } from "@mui/material";
 import CollapsibleTable from "@/components/tables/CollapsibleTable";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
+import { useQuery } from "@tanstack/react-query";
+import { useAuthenticatedFetch } from "@/utils/customFetch";
 
 function UpdateHistoryCard() {
-  const [rows, setRows] = useState([]);
+  // Initialize your custom fetch function
+  const customFetch = useAuthenticatedFetch();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("/api/updates/update-history");
-        const data = await response.json();
-
-        const formattedData = data.map((item) => ({
-          date: item.date,
-          upgrades: item.upgrades,
-        }));
-
-        setRows(formattedData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-
-    fetchData();
-  }, []);
+  // Use React Query to fetch data
+  const { data: rows = [] } = useQuery({
+    queryKey: ["updateHistory"],
+    queryFn: async () => {
+      const data = await customFetch("/api/updates/update-history");
+      // Process the data as needed
+      return data.map((item) => ({
+        date: item.date,
+        upgrades: item.upgrades,
+      }));
+    },
+  });
 
   // Utility function to chunk an array into smaller arrays
   const chunkArray = (array, chunkSize) => {

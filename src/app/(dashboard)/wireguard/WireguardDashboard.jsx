@@ -24,12 +24,6 @@ const WireGuardDashboard = () => {
     refetchInterval: 50000,
   });
 
-  // Fetch network info
-  const { data: networkData, isLoading: networkLoading, error: networkError } = useQuery({
-    queryKey: ["networkInfo"],
-    queryFn: () => customFetch(`/api/network`),
-  });
-
   const handleDelete = async (interfaceName) => {
     try {
       await customDelete(`/api/wireguard/delete/${interfaceName}`);

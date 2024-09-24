@@ -1,18 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import {
-  Chip,
-  Popper,
-  Fade,
-  Paper,
-  ClickAwayListener,
-  MenuList,
-  Typography,
-  Divider,
-  MenuItem,
-  Button,
-} from "@mui/material";
+import {  Chip,  Popper,  Fade,  Paper,  ClickAwayListener,  MenuList,  Typography,  Divider,  MenuItem,  Button,} from "@mui/material";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuth } from "@/contexts/AuthContext";
 import Customizer from "@/components/customizer";

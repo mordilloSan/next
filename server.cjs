@@ -13,6 +13,7 @@ const { router: systemRoutes, cacheServiceDescriptions } = require('./server/sys
 const systemInfoRoutes = require('./server/systeminfo.cjs');
 const powerRoutes = require('./server/power.cjs');
 const wireguardRoutes = require('./server/wireguard.cjs');
+const { app: dockerRoutes, fetchDockerInfo, downloadIcons } = require("./server/docker.cjs");
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -57,11 +58,13 @@ app.prepare().then(async () => {
   server.use('/api/systeminfo', systemInfoRoutes);
   server.use('/api', powerRoutes);
   server.use("/api/wireguard", wireguardRoutes);
+  server.use("/api/docker", dockerRoutes);
 
   // Call cacheServiceDescriptions to cache service descriptions on startup
   console.log("Starting API's");
   await cacheServiceDescriptions();
   await cacheUpdateHistory();
+  await downloadIcons();
 
   // Handle all other routes with Next.js
   server.use((req, res) => handle(req, res));

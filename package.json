@@ -28,6 +28,7 @@
     "apexcharts": "^3.52.0",
     "authenticate-pam": "^1.0.5",
     "classnames": "2.5.1",
+    "dockerode": "^4.0.2",
     "express": "^5.0.0",
     "express-session": "^1.18.0",
     "framer-motion": "^11.5.4",

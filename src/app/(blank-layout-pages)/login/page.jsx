@@ -1,7 +1,5 @@
 "use client";
-import React, { useState, useEffect, Suspense } from "react";
-
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, Suspense } from "react";
 
 import dynamic from "next/dynamic";
 
@@ -14,20 +12,10 @@ const LoginForm = dynamic(
 );
 
 function LoginPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { login, error, isAuthenticated } = useAuth();
+  const { login, error } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      const redirectUrl = searchParams.get("redirect") || "/";
-
-      router.push(redirectUrl);
-    }
-  }, [isAuthenticated, searchParams, router]);
 
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);

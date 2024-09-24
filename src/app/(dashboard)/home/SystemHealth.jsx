@@ -39,7 +39,7 @@ const SystemHealth = () => {
   // Determine status based on the number of failed units and available updates
   let statusColor = "green";
   let IconComponent = CheckCircleOutlineIcon;
-  let iconLink = "";
+  let iconLink = "/updates";
 
   if (failed > 0) {
     statusColor = "red";
@@ -48,13 +48,11 @@ const SystemHealth = () => {
   } else if (updates.length > 0) {
     statusColor = theme.palette.warning.main;
     IconComponent = SecurityUpdateWarningIcon;
-    iconLink = "/updates";
   }
 
   const stats = (
     <Box
       sx={{
-        ml: 10,
         position: "relative",
         display: "inline-flex",
         alignItems: "center",
