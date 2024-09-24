@@ -43,7 +43,7 @@ const NetworkStatsInfo = () => {
   const customFetch = useAuthenticatedFetch();
   const { data, error, isLoading } = useQuery({
     queryKey: ["networkStats"],
-    queryFn: () => customFetch("/api/network"),
+    queryFn: () => customFetch("/api/network/networkstats"),
     refetchInterval: 1000,
   });
 

@@ -38,7 +38,7 @@ const NetworkDetails = ({ params }) => {
 
   const { data: networkDetails, isLoading } = useQuery({
     queryKey: ["networkDetails"],
-    queryFn: () => customFetch(`/api/network/`), // Fetch all network interfaces
+    queryFn: () => customFetch(`/api/network/networkstats`), // Fetch all network interfaces
     enabled: !!name, // Only run the query if `name` is defined
   });
 

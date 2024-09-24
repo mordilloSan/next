@@ -221,7 +221,7 @@ async function getNetworkStats(req) {
 }
 
 // Route to get network statistics
-router.get('/network', async (req, res) => {
+router.get('/networkstats', async (req, res) => {
     try {
         const stats = await getNetworkStats(req);
         res.json(stats);

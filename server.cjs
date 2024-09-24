@@ -34,37 +34,33 @@ app.prepare().then(async () => {
       secure: true,
       httpOnly: true,
       maxAge: 3600000,
-      sameSite: 'Lax',
+      sameSite: 'Strict',
       path: '/',
     },
   }));
 
   server.use(express.json());
 
-  // Apply the isAuthenticated middleware to all other /api routes
-  server.use('/api', (req, res, next) => {
-    if (req.path !== '/login' && req.path !== '/logout') {
-      isAuthenticated(req, res, next);
-    } else {
-      next();
-    }
-  });
-
   server.use("/api", loginRoutes);
-  server.use("/api/updates", updateRoutes);
-  server.use("/api", storageRoutes);
-  server.use("/api", networkRoutes);
-  server.use("/api/system-status", systemRoutes);
-  server.use('/api/systeminfo', systemInfoRoutes);
-  server.use('/api', powerRoutes);
-  server.use("/api/wireguard", wireguardRoutes);
-  server.use("/api/docker", dockerRoutes);
+  server.use("/api/updates", isAuthenticated, updateRoutes);
+  server.use("/api/storage", isAuthenticated, storageRoutes);
+  server.use("/api/network", isAuthenticated, networkRoutes);
+  server.use("/api/system-status", isAuthenticated, systemRoutes);
+  server.use('/api/systeminfo', isAuthenticated, systemInfoRoutes);
+  server.use('/api/power', isAuthenticated, powerRoutes);
+  server.use("/api/wireguard", isAuthenticated, wireguardRoutes);
+  server.use("/api/docker", isAuthenticated, dockerRoutes);
 
-  // Call cacheServiceDescriptions to cache service descriptions on startup
-  console.log("Starting API's");
-  await cacheServiceDescriptions();
-  await cacheUpdateHistory();
-  await downloadIcons();
+  // Call caching functions
+  try {
+    console.log("Starting API's");
+    await cacheServiceDescriptions();
+    await cacheUpdateHistory();
+    await downloadIcons();
+  } catch (error) {
+    console.error('Startup task failed:', error);
+    process.exit(1); // Exit if critical startup tasks fail
+  }
 
   // Handle all other routes with Next.js
   server.use((req, res) => handle(req, res));

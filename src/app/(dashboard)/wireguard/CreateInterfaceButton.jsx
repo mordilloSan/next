@@ -24,7 +24,7 @@ const CreateInterfaceButton = () => {
   // Fetch network info
   const { data: networkData, isLoading: networkLoading, error: networkError } = useQuery({
     queryKey: ["networkInfo"],
-    queryFn: () => customFetch(`/api/network`),
+    queryFn: () => customFetch(`/api/network/networkstats`),
   });
 
   // Function to extract physical NICs

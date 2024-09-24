@@ -30,7 +30,7 @@ const PowerDropdown = () => {
   // Function to handle shutdown action
   const handleShutdown = async () => {
     try {
-      const response = await fetch(`/api/shutdown`, {
+      const response = await fetch(`/api/power/shutdown`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -49,7 +49,7 @@ const PowerDropdown = () => {
   // Function to handle reboot action
   const handleReboot = async () => {
     try {
-      const response = await fetch("/api/reboot", {
+      const response = await fetch("/api/power/reboot", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
