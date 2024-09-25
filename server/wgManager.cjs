@@ -9,7 +9,7 @@ const { existsSync } = require('fs');
 const path = require('path');
 const config = require('./config.cjs');
 const QRCode = require('qrcode');
-const { executeCommand, executeSudoCommand } = require('./executer.cjs');
+const { executeCommand } = require('./executer.cjs');
 const { rm } = require('fs').promises;
 
 class WireGuardManager {
@@ -33,6 +33,35 @@ class WireGuardManager {
         throw e;
       }
     }
+  }
+
+  // Add a new peer
+  async addPeer(availableIp, endPoint, port, serverPublicKey) {
+    const peerKeys = await this.generateKeys();
+    const serverConfigContent = `
+[Peer]
+PublicKey = ${peerKeys.publicKey}
+PresharedKey = ${peerKeys.preSharedKey}
+AllowedIPs = ${availableIp}/32`;
+
+    const peerConfigContent = `
+[Interface]
+PrivateKey = ${peerKeys.privateKey}
+Address = ${availableIp}/32
+DNS = 1.1.1.1
+
+[Peer]
+PublicKey = ${serverPublicKey}
+PresharedKey = ${peerKeys.preSharedKey}
+AllowedIPs = 0.0.0.0/0, ::/0
+Endpoint = ${endPoint}:${port}
+PersistentKeepalive = 25
+`.trim();
+
+    return {
+      serverConfigContent,
+      peerConfigContent,
+    };
   }
 
   // Check if WireGuard is installed
@@ -147,28 +176,28 @@ class WireGuardManager {
           name: peerFile.replace('.conf', ''), // Use the filename as the peer's name
         };
 
-        // Extract AllowedIPs
-        const allowedIPsMatch = fileContent.match(/Address\s*=\s*([0-9\.\/]+)/);
-        if (allowedIPsMatch) {
-          peer.allowedIPs = allowedIPsMatch[1];
-        } else {
-          // Fallback to AllowedIPs in the [Peer] section
-          const peerAllowedIPsMatch = fileContent.match(/AllowedIPs\s*=\s*([0-9a-fA-F\.:\/, ]+)/);
-          if (peerAllowedIPsMatch) {
-            peer.allowedIPs = peerAllowedIPsMatch[1];
+        // Split the file content into lines and process each line
+        const lines = fileContent.split('\n');
+        lines.forEach((line) => {
+          line = line.trim();
+          if (line.startsWith('PrivateKey =')) {
+            peer.privateKey = line.split('=')[1].trim();
+          } else if (line.startsWith('PresharedKey =')) {
+            peer.presharedKey = line.split('=')[1].trim();
+          } else if (line.startsWith('AllowedIPs =')) {
+            peer.allowedIPs = line.split('=')[1].trim();
+          } else if (line.startsWith('PersistentKeepalive =')) {
+            peer.keepAlive = line.split('=')[1].trim();
+          } else if (line.startsWith('Address =')) {
+            peer.addressIP = line.split('=')[1].trim();
           }
-        }
-
-        // Add peer to the peers array if allowedIPs is found
-        if (peer.allowedIPs) {
-          peers.push(peer);
-        }
+        });
+        peers.push(peer);
       }
-
       return peers;
     } catch (error) {
-      console.error(`Error reading peer config files for interface ${interfaceName}:`, error);
-      throw new Error(`Failed to retrieve peer information for ${interfaceName}`);
+      console.error('Error reading peer config files for interface ${ interfaceName }:', error);
+      throw new Error('Failed to retrieve peer information for ${ interfaceName }');
     }
   }
 
@@ -428,81 +457,81 @@ PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -
     }
   }
 
-// Create a new client (peer)
-async createClient(interfaceName, clientName) {
-  try {
-    // Paths
-    const interfaceDir = path.join(this.configDir, interfaceName);
-    const configFilePath = path.join(this.configDir, `${interfaceName}.conf`);
+  // Create a new client (peer)
+  async createClient(interfaceName, clientName) {
+    try {
+      // Paths
+      const interfaceDir = path.join(this.configDir, interfaceName);
+      const configFilePath = path.join(this.configDir, `${interfaceName}.conf`);
 
-    // Read existing interface configuration
-    const existingConfigContent = await readFile(configFilePath, 'utf8');
+      // Read existing interface configuration
+      const existingConfigContent = await readFile(configFilePath, 'utf8');
 
-    // Extract the server IP address
-    const addressMatch = existingConfigContent.match(/Address\s*=\s*([0-9\.]+)/);
-    if (!addressMatch) {
-      throw new Error('Failed to find the server IP address in the interface configuration.');
-    }
-    const serverIP = addressMatch[1];
-    const listenPortMatch = existingConfigContent.match(/ListenPort\s*=\s*(\d+)/);
-    if (!listenPortMatch) {
-      throw new Error('Failed to find ListenPort in the interface configuration.');
-    }
-    const listenPort = listenPortMatch[1];
-
-    // Get existing peers to avoid IP conflicts and find the highest peer number
-    const peers = await this.getPeersForInterface(interfaceName);
-    const existingIps = peers.map(peer => peer.allowedIPs.split('/')[0]);
-
-    // Include server IP in existing IPs to avoid assigning it
-    existingIps.push(serverIP);
-
-    // Determine the next available IP address
-    const newIp = this.getNextAvailableIP(serverIP, existingIps);
-
-    // **Generate a unique clientName by detecting the last digit and adding one**
-    if (!clientName) {
-      // Get existing peer names
-      const existingPeerNames = peers.map(peer => peer.name);
-      let maxNumber = -1;
-
-      existingPeerNames.forEach(name => {
-        // Extract trailing digits
-        const match = name.match(/(\d+)$/);
-        if (match) {
-          const num = parseInt(match[1], 10);
-          if (num > maxNumber) {
-            maxNumber = num;
-          }
-        }
-      });
-
-      // Set clientName
-      const newNumber = maxNumber + 1; // If no peers, maxNumber is -1, so newNumber will be 0
-      clientName = `peer${newNumber}`;
-    } else {
-      // Check if clientName already exists
-      const clientConfigPath = path.join(interfaceDir, `${clientName}.conf`);
-      if (existsSync(clientConfigPath)) {
-        throw new Error(`Client with name ${clientName} already exists. Please choose a different name.`);
+      // Extract the server IP address
+      const addressMatch = existingConfigContent.match(/Address\s*=\s*([0-9\.]+)/);
+      if (!addressMatch) {
+        throw new Error('Failed to find the server IP address in the interface configuration.');
       }
-    }
+      const serverIP = addressMatch[1];
+      const listenPortMatch = existingConfigContent.match(/ListenPort\s*=\s*(\d+)/);
+      if (!listenPortMatch) {
+        throw new Error('Failed to find ListenPort in the interface configuration.');
+      }
+      const listenPort = listenPortMatch[1];
 
-    // Detect public IP and server's public key
-    const endPoint = await this.detectPublicIP();
+      // Get existing peers to avoid IP conflicts and find the highest peer number
+      const peers = await this.getPeersForInterface(interfaceName);
+      const existingIps = peers.map(peer => peer.allowedIPs.split('/')[0]);
 
-    const serverPrivateKeyMatch = existingConfigContent.match(/PrivateKey\s*=\s*([A-Za-z0-9+/=]+)/);
-    if (!serverPrivateKeyMatch) {
-      throw new Error('Failed to find the server PrivateKey in the existing configuration.');
-    }
-    const serverPrivateKey = serverPrivateKeyMatch[1];
-    const serverPublicKey = await executeCommand(`echo "${serverPrivateKey}" | wg pubkey`);
+      // Include server IP in existing IPs to avoid assigning it
+      existingIps.push(serverIP);
 
-    // Generate keys for the client
-    const peerKeys = await this.generateKeys();
+      // Determine the next available IP address
+      const newIp = this.getNextAvailableIP(serverIP, existingIps);
 
-    // Create client configuration
-    const peerConfigContent = `
+      // **Generate a unique clientName by detecting the last digit and adding one**
+      if (!clientName) {
+        // Get existing peer names
+        const existingPeerNames = peers.map(peer => peer.name);
+        let maxNumber = -1;
+
+        existingPeerNames.forEach(name => {
+          // Extract trailing digits
+          const match = name.match(/(\d+)$/);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > maxNumber) {
+              maxNumber = num;
+            }
+          }
+        });
+
+        // Set clientName
+        const newNumber = maxNumber + 1; // If no peers, maxNumber is -1, so newNumber will be 0
+        clientName = `peer${newNumber}`;
+      } else {
+        // Check if clientName already exists
+        const clientConfigPath = path.join(interfaceDir, `${clientName}.conf`);
+        if (existsSync(clientConfigPath)) {
+          throw new Error(`Client with name ${clientName} already exists. Please choose a different name.`);
+        }
+      }
+
+      // Detect public IP and server's public key
+      const endPoint = await this.detectPublicIP();
+
+      const serverPrivateKeyMatch = existingConfigContent.match(/PrivateKey\s*=\s*([A-Za-z0-9+/=]+)/);
+      if (!serverPrivateKeyMatch) {
+        throw new Error('Failed to find the server PrivateKey in the existing configuration.');
+      }
+      const serverPrivateKey = serverPrivateKeyMatch[1];
+      const serverPublicKey = await executeCommand(`echo "${serverPrivateKey}" | wg pubkey`);
+
+      // Generate keys for the client
+      const peerKeys = await this.generateKeys();
+
+      // Create client configuration
+      const peerConfigContent = `
 [Interface]
 PrivateKey = ${peerKeys.privateKey}
 Address = ${newIp}/32
@@ -516,34 +545,34 @@ Endpoint = ${endPoint}:${listenPort}
 PersistentKeepalive = 25
 `.trim();
 
-    // Save the client's configuration file
-    const clientConfigPath = path.join(interfaceDir, `${clientName}.conf`);
-    await writeFile(clientConfigPath, peerConfigContent, { mode: 0o600 });
+      // Save the client's configuration file
+      const clientConfigPath = path.join(interfaceDir, `${clientName}.conf`);
+      await writeFile(clientConfigPath, peerConfigContent, { mode: 0o600 });
 
-    // Generate QR code for the client
-    const qrCodePath = path.join(interfaceDir, `${clientName}.png`);
-    await QRCode.toFile(qrCodePath, peerConfigContent);
+      // Generate QR code for the client
+      const qrCodePath = path.join(interfaceDir, `${clientName}.png`);
+      await QRCode.toFile(qrCodePath, peerConfigContent);
 
-    // Update the server configuration
-    const serverConfigContent = `
+      // Update the server configuration
+      const serverConfigContent = `
 [Peer]
 PublicKey = ${peerKeys.publicKey}
 PresharedKey = ${peerKeys.preSharedKey}
 AllowedIPs = ${newIp}/32
-`;
+`.trim();
 
-    const updatedConfigContent = `${existingConfigContent.trim()}\n\n${serverConfigContent}`;
-    await writeFile(configFilePath, updatedConfigContent);
+      const updatedConfigContent = `${existingConfigContent.trim()}\n\n${serverConfigContent}`;
+      await writeFile(configFilePath, updatedConfigContent);
 
-    // Restart the WireGuard interface
-    await this.restartWireGuardInterface(interfaceName);
+      // Restart the WireGuard interface
+      await this.restartWireGuardInterface(interfaceName);
 
-    return { message: `Client ${clientName} added successfully.` };
-  } catch (error) {
-    console.error('Error creating client:', error);
-    throw new Error(error.message || 'Failed to create client.');
+      return { message: `Client ${clientName} added successfully.` };
+    } catch (error) {
+      console.error('Error creating client:', error);
+      throw new Error(error.message || 'Failed to create client.');
+    }
   }
-}
 
   // Generate keys for peers and server
   async generateKeys() {
@@ -691,17 +720,6 @@ AllowedIPs = ${newIp}/32
     return newIp;
   }
 
-  // Increment an IP address
-  incrementIPAddress(ip) {
-    const ipParts = ip.split('.').map(Number);
-    for (let i = ipParts.length - 1; i >= 0; i--) {
-      ipParts[i]++;
-      if (ipParts[i] <= 255) break;
-      ipParts[i] = 0; // Reset to 0 and carry the increment to the next octet
-    }
-    return ipParts.join('.');
-  }
-
   // Get metrics (placeholder implementation)
   async getMetrics() {
     // Implement your metrics collection logic here
@@ -716,3 +734,4 @@ AllowedIPs = ${newIp}/32
 }
 
 module.exports = new WireGuardManager();
+

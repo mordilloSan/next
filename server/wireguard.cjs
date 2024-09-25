@@ -5,6 +5,7 @@ const path = require('path');
 const wgManager = require('./wgManager.cjs');
 const config = require('./config.cjs');
 const server = express.Router();
+const { existsSync } = require('fs');
 
 // Middleware to parse JSON bodies
 server.use(express.json());
