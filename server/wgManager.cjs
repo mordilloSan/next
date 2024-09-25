@@ -4,13 +4,11 @@
 
 const dgram = require('dgram');
 const { networkInterfaces } = require('os');
-const { stat, mkdir, readdir, readFile, writeFile, unlink, access } = require('fs').promises;
-const { existsSync } = require('fs');
+const { stat, mkdir, readdir, readFile, writeFile, unlink, access, rm } = require('fs').promises;
 const path = require('path');
 const config = require('./config.cjs');
 const QRCode = require('qrcode');
 const { executeCommand } = require('./executer.cjs');
-const { rm } = require('fs').promises;
 
 class WireGuardManager {
   constructor() {
@@ -201,17 +199,6 @@ PersistentKeepalive = 25
     }
   }
 
-  // Get clients (peers) for an interface
-  async getClients(interfaceName) {
-    try {
-      const peers = await this.getPeersForInterface(interfaceName);
-      return peers;
-    } catch (error) {
-      console.error(`Error getting clients for interface ${interfaceName}:`, error);
-      throw new Error(`Failed to get clients for interface ${interfaceName}`);
-    }
-  }
-
   // Delete a client (peer)
   async deleteClient(interfaceName, clientName) {
     try {
@@ -219,12 +206,15 @@ PersistentKeepalive = 25
       const interfaceDir = path.join(this.configDir, interfaceName);
       const clientConfigPath = path.join(interfaceDir, `${clientName}.conf`);
 
-      // Check if the client config exists
-      if (!existsSync(clientConfigPath)) {
+      // Check if the client configuration file exists
+      try {
+        await access(clientConfigPath);
+      } catch (err) {
+        console.error(`Client configuration file does not exist at path: ${clientConfigPath}`);
         throw new Error(`Client configuration file ${clientConfigPath} does not exist.`);
       }
 
-      // Read the client's configuration to get the PublicKey
+      // Read the client's configuration to get the PrivateKey
       const clientConfigContent = await readFile(clientConfigPath, 'utf8');
       const clientPrivateKeyMatch = clientConfigContent.match(/PrivateKey\s*=\s*([A-Za-z0-9+/=]+)/);
       if (!clientPrivateKeyMatch) {
@@ -248,8 +238,11 @@ PersistentKeepalive = 25
       // Delete client's config and QR code
       const qrCodePath = path.join(interfaceDir, `${clientName}.png`);
       await unlink(clientConfigPath);
-      if (existsSync(qrCodePath)) {
+      try {
+        await access(qrCodePath);
         await unlink(qrCodePath);
+      } catch (err) {
+        // QR code doesn't exist, ignore
       }
 
       // Restart the WireGuard interface

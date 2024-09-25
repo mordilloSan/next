@@ -185,7 +185,7 @@ server.get('/:interfaceName/clients', async (req, res) => {
   const { interfaceName } = req.params;
 
   try {
-    const clients = await wgManager.getClients(interfaceName);
+    const clients = await wgManager.getPeersForInterface(interfaceName);
     return res.json(clients);
   } catch (error) {
     console.error('Error getting clients:', error);
