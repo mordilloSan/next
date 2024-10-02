@@ -15,13 +15,12 @@ server.get('/interfaces', async (req, res) => {
   try {
     const interfaces = await wgManager.detectWireguardInterfaces();
 
-    if (!interfaces || interfaces.length === 0) {
+    if (!interfaces) {
       return res.status(404).json({ message: 'No WireGuard interfaces found.' });
     }
 
     return res.json(interfaces);
   } catch (error) {
-    console.error('Error retrieving WireGuard interfaces:', error);
     return res.status(500).json({ error: 'Failed to retrieve WireGuard interfaces.' });
   }
 });
@@ -38,7 +37,6 @@ server.post('/create', async (req, res) => {
     const result = await wgManager.createInterface(serverName, port, CIDR, peers, nic);
     return res.status(201).json(result);
   } catch (error) {
-    console.error('Error creating WireGuard interface:', error);
     return res.status(500).json({ error: error.message });
   }
 });
@@ -55,7 +53,6 @@ server.delete('/delete/:name', async (req, res) => {
     const result = await wgManager.deleteInterface(name);
     return res.status(200).json(result);
   } catch (error) {
-    console.error('Error deleting WireGuard interface:', error);
     return res.status(500).json({ error: error.message });
   }
 });
@@ -77,7 +74,6 @@ server.post('/toggle/:name', async (req, res) => {
     const result = await wgManager.toggleInterface(name, status);
     return res.json(result);
   } catch (error) {
-    console.error(`Error toggling WireGuard interface ${name}:`, error);
     return res.status(500).json({ error: error.message });
   }
 });
@@ -131,12 +127,10 @@ server.get('/:interfaceName/:peerName/config', async (req, res) => {
 
     res.download(configPath, `${peerName}.conf`, (err) => {
       if (err) {
-        console.error(`Error sending config file for peer ${peerName}:`, err);
         res.status(500).json({ error: 'Failed to download config file' });
       }
     });
   } catch (error) {
-    console.error(`Error processing download request for peer ${peerName}:`, error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -149,7 +143,6 @@ server.get('/:interfaceName/:peerName/qrcode', async (req, res) => {
     const qrCode = await wgManager.getClientQRCode(interfaceName, peerName);
     return res.json({ qrcode: qrCode });
   } catch (error) {
-    console.error(`Error processing QR code request for peer ${peerName}:`, error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -162,7 +155,6 @@ server.delete('/:interfaceName/:peerName/remove', async (req, res) => {
     const result = await wgManager.deleteClient(interfaceName, peerName);
     return res.status(200).json(result);
   } catch (error) {
-    console.error('Error removing peer:', error);
     return res.status(500).json({ error: error.message });
   }
 });
@@ -175,7 +167,6 @@ server.post('/:interfaceName/:peerName/add', async (req, res) => {
     const result = await wgManager.createClient(interfaceName);
     return res.status(201).json(result);
   } catch (error) {
-    console.error('Error adding peer:', error);
     return res.status(500).json({ error: error.message });
   }
 });
@@ -188,7 +179,6 @@ server.get('/:interfaceName/clients', async (req, res) => {
     const clients = await wgManager.getPeersForInterface(interfaceName);
     return res.json(clients);
   } catch (error) {
-    console.error('Error getting clients:', error);
     return res.status(500).json({ error: error.message });
   }
 });
@@ -199,7 +189,6 @@ server.get('/metrics', async (req, res) => {
     const metrics = await wgManager.getMetrics(req);
     return res.json(metrics);
   } catch (error) {
-    console.error('Error getting metrics:', error);
     return res.status(500).json({ error: 'Failed to retrieve metrics.' });
   }
 });

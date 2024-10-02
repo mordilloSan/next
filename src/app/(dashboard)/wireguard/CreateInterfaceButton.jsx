@@ -49,8 +49,7 @@ const CreateInterfaceButton = () => {
       setShowDialog(false);
       refetch();
     } catch (error) {
-      console.error("Failed to create WireGuard interface:", error);
-      setError("Failed to create interface");
+      setError(error.message);
     } finally {
       setLoading(false);
     }

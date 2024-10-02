@@ -322,8 +322,8 @@ PersistentKeepalive = 25
 Address = ${availableIps[0]}
 ListenPort = ${port}
 PrivateKey = ${serverKeys.privateKey}
-PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o ${nic} -j MASQUERADE
-PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o ${nic} -j MASQUERADE
+PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o ${nic} -j MASQUERADE
+PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o ${nic} -j MASQUERADE
 `.trim();
 
       // Ensure the server directory exists
@@ -346,7 +346,7 @@ PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -
       await executeCommand(`wg-quick up ${filePath}`);
       return { message: `WireGuard interface ${serverName} created and running successfully.` };
     } catch (error) {
-      throw new Error('Failed to create WireGuard interface.');
+      throw new Error(`Failed to create WireGuard interface: ${error.message}`);
     }
   }
 
