@@ -8,7 +8,8 @@ const { stat, mkdir, readdir, readFile, writeFile, unlink, access, rm } = requir
 const path = require('path');
 const config = require('./config.cjs');
 const QRCode = require('qrcode');
-const { executeCommand } = require('./executer.cjs');
+const { executeCommand, executeSudoCommand } = require('./executer.cjs');
+const { existsSync } = require('fs'); // Import existsSync
 
 class WireGuardManager {
   constructor() {
@@ -66,7 +67,6 @@ PersistentKeepalive = 25
   async ensureWireGuardInstalled() {
     try {
       const version = await executeCommand('wg -v');
-      console.log('WireGuard version - ', version);
       return version;
     } catch (error) {
       throw new Error('WireGuard is not installed on the system. Please install wg and wg-quick');
@@ -81,7 +81,7 @@ PersistentKeepalive = 25
         const status = await executeCommand(`ip link show ${interfaceName}`);
         isInterfaceUp = status && (status.includes('state UP') || status.includes('state UNKNOWN'));
       } catch (error) {
-        console.log(`Interface ${interfaceName} is not up or does not exist yet: ${error.message}`);
+        throw new Error(`Interface ${interfaceName} is not up or does not exist yet: ${error.message}`);
       }
       if (isInterfaceUp) {
         await executeCommand(`wg-quick down ${interfaceName}`);
@@ -89,7 +89,6 @@ PersistentKeepalive = 25
       }
       return { success: true, message: `Interface ${interfaceName} is now up and running.` };
     } catch (error) {
-      console.error(`Error managing WireGuard interface ${interfaceName}:`, error);
       return { success: false, error: `Failed to manage WireGuard interface: ${error.message}` };
     }
   }
@@ -147,7 +146,6 @@ PersistentKeepalive = 25
 
       return interfaces;
     } catch (error) {
-      console.error('Error detecting WireGuard interfaces:', error);
       return []; // Return empty array in case of an error
     }
   }
@@ -194,7 +192,6 @@ PersistentKeepalive = 25
       }
       return peers;
     } catch (error) {
-      console.error('Error reading peer config files for interface ${ interfaceName }:', error);
       throw new Error('Failed to retrieve peer information for ${ interfaceName }');
     }
   }
@@ -210,7 +207,6 @@ PersistentKeepalive = 25
       try {
         await access(clientConfigPath);
       } catch (err) {
-        console.error(`Client configuration file does not exist at path: ${clientConfigPath}`);
         throw new Error(`Client configuration file ${clientConfigPath} does not exist.`);
       }
 
@@ -250,7 +246,6 @@ PersistentKeepalive = 25
 
       return { message: `Client ${clientName} deleted successfully.` };
     } catch (error) {
-      console.error('Error deleting client:', error);
       throw new Error('Failed to delete client.');
     }
   }
@@ -268,7 +263,6 @@ PersistentKeepalive = 25
       const clientConfigContent = await readFile(clientConfigPath, 'utf8');
       return clientConfigContent;
     } catch (error) {
-      console.error('Error getting client configuration:', error);
       throw new Error('Failed to get client configuration.');
     }
   }
@@ -288,7 +282,6 @@ PersistentKeepalive = 25
 
       return base64QRCode;
     } catch (error) {
-      console.error('Error getting client QR code:', error);
       throw new Error('Failed to get client QR code.');
     }
   }
@@ -316,7 +309,6 @@ PersistentKeepalive = 25
       const interfaceExists = interfaces.some(iface => iface.name === serverName);
 
       if (interfaceExists) {
-        console.log(`WireGuard interface ${serverName} already exists.`);
         throw new Error(`WireGuard interface ${serverName} already exists.`);
       }
 
@@ -351,13 +343,9 @@ PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -
       // Write the server configuration to a file
       const filePath = path.join(this.configDir, `${serverName}.conf`);
       await writeFile(filePath, configContent);
-
-      // Bring up the WireGuard interface
       await executeCommand(`wg-quick up ${filePath}`);
-
       return { message: `WireGuard interface ${serverName} created and running successfully.` };
     } catch (error) {
-      console.error('Error creating WireGuard interface:', error);
       throw new Error('Failed to create WireGuard interface.');
     }
   }
@@ -372,7 +360,6 @@ PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -
 
       try {
         await executeCommand(`wg-quick down ${configFilePath}`);
-        console.log(`Interface ${name} brought down successfully.`);
       } catch (err) {
         if (err.message.includes('is not a WireGuard interface')) {
           // Interface is not up; proceed without throwing an error
@@ -386,7 +373,6 @@ PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -
         await rm(clientFolderPath, { recursive: true, force: true });
       } catch (err) {
         if (err.code !== 'ENOENT') {
-          console.error(`Error deleting client folder:`, err);
           throw new Error(`Failed to delete client configuration folder for interface ${name}.`);
         }
       }
@@ -394,7 +380,6 @@ PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -
       await unlink(configFilePath);
       return { message: `WireGuard interface ${name} deleted successfully.` };
     } catch (e) {
-      console.error(`Error accessing config file:`, e);
       if (e.code === 'ENOENT') {
         throw new Error(`Configuration file for interface ${name} does not exist.`);
       }
@@ -422,30 +407,24 @@ PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -
 
       // Compare requested status with current status
       if (currentStatus === status) {
-        console.log(`WireGuard interface ${name} is already ${status}. No change needed.`);
         return { message: `WireGuard interface ${name} is already ${status}.` };
       }
 
       // Toggle the WireGuard interface and log the change
       if (status === 'up') {
         await executeCommand(`wg-quick up ${configFilePath}`);
-        console.log(`WireGuard interface ${name} was down and is now up.`);
         return { message: `WireGuard interface ${name} is now up.` };
       } else if (status === 'down') {
         await executeCommand(`wg-quick down ${configFilePath}`);
-        console.log(`WireGuard interface ${name} was up and is now down.`);
         return { message: `WireGuard interface ${name} is now down.` };
       }
     } catch (error) {
       if (error.code === 'ENOENT') {
-        console.error(`Configuration file ${configFilePath} does not exist.`);
         throw new Error(`Configuration file for interface ${name} does not exist.`);
       }
       if (error.message.includes('Address already in use')) {
-        console.error(`Error toggling WireGuard interface ${name}: Address already in use.`);
         throw new Error('The IP address is already in use. Please check the configuration.');
       }
-      console.error(`Error toggling WireGuard interface ${name}:`, error);
       throw new Error(`Failed to ${status} WireGuard interface ${name}.`);
     }
   }
@@ -474,14 +453,13 @@ PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -
 
       // Get existing peers to avoid IP conflicts and find the highest peer number
       const peers = await this.getPeersForInterface(interfaceName);
-      const existingIps = peers.map(peer => peer.allowedIPs.split('/')[0]);
+      const existingIps = peers.map(peer => peer.addressIP.split('/')[0]);
+
 
       // Include server IP in existing IPs to avoid assigning it
       existingIps.push(serverIP);
-
       // Determine the next available IP address
       const newIp = this.getNextAvailableIP(serverIP, existingIps);
-
       // **Generate a unique clientName by detecting the last digit and adding one**
       if (!clientName) {
         // Get existing peer names
@@ -562,7 +540,6 @@ AllowedIPs = ${newIp}/32
 
       return { message: `Client ${clientName} added successfully.` };
     } catch (error) {
-      console.error('Error creating client:', error);
       throw new Error(error.message || 'Failed to create client.');
     }
   }
@@ -618,7 +595,6 @@ AllowedIPs = ${newIp}/32
       const data = await response.json();
       return data.ip;
     } catch (error) {
-      console.error('Error detecting public IP:', error);
       throw new Error('Failed to detect public IP.');
     }
   }
@@ -713,17 +689,106 @@ AllowedIPs = ${newIp}/32
     return newIp;
   }
 
-  // Get metrics (placeholder implementation)
-  async getMetrics() {
-    // Implement your metrics collection logic here
-    // For now, returning a placeholder object
-    return {
-      totalInterfaces: 0,
-      totalPeers: 0,
-      activeInterfaces: 0,
-      activePeers: 0,
-    };
+  // Get metrics
+  async getMetrics(req) {
+    try {
+      const password = req.session?.user?.password;
+  
+      // Execute the command and get the output
+      const wgData = await executeSudoCommand('wg show all dump', password);
+  
+      // Split the output into lines
+      const lines = wgData.trim().split('\n');
+  
+      let totalInterfaces = 0;
+      let totalPeers = 0;
+      let activeInterfaces = 0;
+      let activePeers = 0;
+  
+      let currentInterface = null;
+      const interfaces = {};
+  
+      for (const line of lines) {
+        // Split the line into fields (tab-separated)
+        const fields = line.trim().split('\t');
+  
+        // If the line has 5 fields, it's an interface line
+        if (fields.length === 5) {
+          const [interfaceName, fwMark] = fields;
+          totalInterfaces += 1;
+  
+          // Determine if the interface is active
+          const isInterfaceActive = fwMark.trim() === 'on' ? true : false;
+          if (isInterfaceActive) {
+            activeInterfaces += 1;
+          }
+  
+          // Initialize the interface entry
+          interfaces[interfaceName] = {
+            name: interfaceName,
+            isActive: isInterfaceActive,
+            peers: [],
+          };
+  
+          // Set the current interface context
+          currentInterface = interfaceName;
+        } else if (fields.length === 9) {
+          // Peer line
+          const [
+            interfaceName,
+            publicKey,
+            presharedKey,
+            endpoint,
+            allowedIPs,
+            latestHandshake,
+            transferRx,
+            transferTx,
+            persistentKeepalive,
+          ] = fields;
+  
+          totalPeers += 1;
+  
+          // Determine if the peer is active based on latest handshake or data transfer
+          const isPeerActive =
+            parseInt(latestHandshake, 10) > 0 ||
+            parseInt(transferRx, 10) > 0 ||
+            parseInt(transferTx, 10) > 0;
+  
+          if (isPeerActive) {
+            activePeers += 1;
+          }
+  
+          // Add peer to the current interface
+          if (currentInterface && interfaces[currentInterface]) {
+            interfaces[currentInterface].peers.push({
+              publicKey,
+              presharedKey,
+              endpoint,
+              allowedIPs,
+              latestHandshake: parseInt(latestHandshake, 10),
+              transferRx: parseInt(transferRx, 10),
+              transferTx: parseInt(transferTx, 10),
+              persistentKeepalive,
+              isActive: isPeerActive,
+            });
+          }
+        }
+      }
+  
+      // You can also return more detailed metrics if needed
+      return {
+        totalInterfaces,
+        totalPeers,
+        activeInterfaces,
+        activePeers,
+        interfaces, // Optional: detailed interface and peer information
+      };
+    } catch (error) {
+      console.error('Error getting metrics:', error);
+      throw new Error('Failed to get metrics.');
+    }
   }
+  
 }
 
 module.exports = new WireGuardManager();

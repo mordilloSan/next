@@ -196,7 +196,7 @@ server.get('/:interfaceName/clients', async (req, res) => {
 // API endpoint to get metrics
 server.get('/metrics', async (req, res) => {
   try {
-    const metrics = await wgManager.getMetrics();
+    const metrics = await wgManager.getMetrics(req);
     return res.json(metrics);
   } catch (error) {
     console.error('Error getting metrics:', error);
