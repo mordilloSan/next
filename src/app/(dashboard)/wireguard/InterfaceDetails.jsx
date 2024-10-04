@@ -5,6 +5,7 @@ import { Grid, Card, CardContent, Typography, Box, IconButton, CircularProgress,
 import { Delete, GetApp, QrCode } from "@mui/icons-material";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthenticatedFetch, useAuthenticatedDelete } from "@/utils/customFetch";
+import Image from "next/image";
 
 const InterfaceDetails = ({ params }) => {
   const [qrCode, setQrCode] = useState(null); // State to hold the QR code data
@@ -124,7 +125,13 @@ const InterfaceDetails = ({ params }) => {
           {loadingQr ? (
             <Typography>Loading QR code...</Typography>
           ) : qrCode ? (
-            <img src={qrCode} alt="QR Code" style={{ width: "100%" }} />
+            <Image
+              src={qrCode}
+              alt="QR Code"
+              width={300} // Specify width and height as required
+              height={300}
+              style={{ width: "100%", height: "auto" }}
+            />
           ) : (
             <Typography>Failed to load QR code</Typography>
           )}
