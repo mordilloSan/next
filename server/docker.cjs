@@ -99,21 +99,4 @@ app.post("/containers/:id/stop", async (req, res) => {
   }
 });
 
-async function fetchDockerInfo() {
-  try {
-    const containers = await docker.listContainers({ all: true });
-    return containers.map((container) => ({
-      id: container.Id,
-      name: container.Names.join(", ").substring(1),
-      image: container.Image,
-      state: container.State,
-      status: container.Status,
-      // Include any other container details you need
-    }));
-  } catch (error) {
-    console.error("Failed to fetch Docker containers info:", error.message);
-    throw error;
-  }
-}
-
-module.exports = { fetchDockerInfo, downloadIcons, app };
+module.exports = { downloadIcons, app };
