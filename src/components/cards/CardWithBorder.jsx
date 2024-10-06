@@ -42,13 +42,11 @@ const CardWithBorder = (props) => {
       color={color}
       elevation={2}
       sx={{
-        height: stats2
-          ? {
+        height:  {
             xs: 340,
             sm: 340,
             xl: cardHeight,
-          }
-          : cardHeight,
+          },
         m: 1,
         display: "flex",
         flexDirection: "column",
@@ -80,7 +78,7 @@ const CardWithBorder = (props) => {
             </Box>
           </Box>
         ) : (
-          <Box sx={{ mt: 3 }}>{stats}</Box>
+          <Box sx={{ mt: 7 }}>{stats}</Box>
         )}
       </CardContent>
     </HoverableCard>

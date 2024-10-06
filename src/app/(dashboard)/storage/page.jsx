@@ -7,6 +7,7 @@ import { useAuthenticatedFetch } from "@/utils/customFetch";
 import {
   Typography,
   Box,
+  Grid,
   LinearProgress,
   Table,
   TableBody,
@@ -19,6 +20,8 @@ import {
 import StorageIcon from "@mui/icons-material/Storage";
 import FolderSharedIcon from "@mui/icons-material/FolderShared";
 import DriveEtaIcon from "@mui/icons-material/DriveEta";
+import {  } from "@mui/material";
+import Drives from "./Drives";
 
 const StorageDashboard = () => {
   const customFetch = useAuthenticatedFetch();
@@ -42,7 +45,11 @@ const StorageDashboard = () => {
 
 
   return (
-<Typography>Teste</Typography>
+    <Grid container spacing={4}>
+      <Grid item xs={12} md={6} lg={4}>
+        <Drives />
+      </Grid>
+    </Grid>
   );
 };
 

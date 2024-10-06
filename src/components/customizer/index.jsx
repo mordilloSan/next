@@ -69,7 +69,6 @@ const Customizer = ({ open, onClose }) => {
       open={open}
       onClose={handleClose}
       maxWidth="sm"
-      fullWidth
       PaperProps={{
         style: {
           overflow: "visible",
@@ -79,8 +78,8 @@ const Customizer = ({ open, onClose }) => {
       <DialogTitle>Customize Primary Color</DialogTitle>
       <DialogContent dividers>
         <div className={styles.customizerBody}>
-          <div className="flex flex-col gap-2.5">
-            <div className="flex items-center justify-between">
+          <div className="flex flex-col ">
+            <div className="grid grid-cols-3 gap-2">
               {primaryColorConfig.map((item) => (
                 <div
                   key={item.main}

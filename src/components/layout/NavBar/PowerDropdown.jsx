@@ -4,12 +4,15 @@ import { useRef, useState, useEffect } from "react";
 import { Popper, Fade, Paper, ClickAwayListener, MenuList, MenuItem, Button, Divider, Chip } from "@mui/material";
 import { Icon } from "@iconify/react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuthenticatedPost } from "@/utils/customFetch";
+import NavbarButton from "./NavbarButton";
 
 const PowerDropdown = () => {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef(null);
   const { logout } = useAuth();
   const [username, setUsername] = useState("");
+  const customPost = useAuthenticatedPost();
 
   useEffect(() => {
     const fetchUsername = () => {
@@ -55,12 +58,8 @@ const PowerDropdown = () => {
   // Function to handle shutdown action
   const handleShutdown = async () => {
     try {
-      const response = await fetch(`/api/power/shutdown`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+
+      const response = await customPost(`/api/power/shutdown`);
       if (response.ok) {
         console.log("Shutdown initiated");
       } else {
@@ -79,12 +78,7 @@ const PowerDropdown = () => {
   // Function to handle reboot action
   const handleReboot = async () => {
     try {
-      const response = await fetch("/api/power/reboot", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await customPost("/api/power/reboot");
       if (response.ok) {
         console.log("Reboot initiated");
       } else {
@@ -121,56 +115,41 @@ const PowerDropdown = () => {
                 placement === "bottom-end" ? "right top" : "left top",
             }}
           >
-            <Paper className="shadow-lg">
+            <Paper className="shadow-lg ">
               <ClickAwayListener onClickAway={handleDropdownClose}>
                 <MenuList>
-                  <div className="flex items-center py-2 px-4 gap-2">
+                  <div className="py-2 px-4">
                     <Chip
                       label={username}
-                      size="small"
                       color="primary"
                       variant="tonal"
-                      className="self-start rounded-sm"
+    className="rounded-sm w-full"
                     />
                   </div>
                   <Divider className="my-1" />
                   {/* Shutdown Button */}
-                  <MenuItem className="gap-3">
-                    <Button
-                      onClick={handleShutdown}
-                      fullWidth
-                      color="primary"
-                      variant="outlined"
-                      size="small"
-                      endIcon={<i className="ri-shut-down-line" />}
+                  <MenuItem onClick={handleShutdown}>
+                    <NavbarButton
+                      text="Shutdown"
+                      icon={<i className="ri-shut-down-line" />}
                     >
-                      Shutdown
-                    </Button>
+                    </NavbarButton>
                   </MenuItem>
                   {/* Reboot Button */}
-                  <MenuItem className="gap-3">
-                  <Button
-                      onClick={handleReboot}
-                      color="primary"
-                      fullWidth
-                      variant="text"
-                      size="small"
-                      endIcon={<i className="ri-restart-line" />}
+                  <MenuItem onClick={handleReboot}>
+                    <NavbarButton
+                      text="Reboot"
+                      icon={<i className="ri-restart-line" />}
                     >
-                      Reboot
-                    </Button>
+                    </NavbarButton>
                   </MenuItem>
                   {/* LogOut Button */}
-                  <MenuItem className="gap-3">
-                    <Button
-                      onClick={handleUserLogout}
-                      fullWidth
-                      variant="text"
-                      size="small"
-                      endIcon={<i className="ri-logout-box-r-line" />}
+                  <MenuItem onClick={handleUserLogout}>
+                    <NavbarButton
+                      text="Logout"
+                      icon={<i className="ri-logout-box-r-line" />}
                     >
-                      Logout
-                    </Button>
+                    </NavbarButton>
                   </MenuItem>
                 </MenuList>
               </ClickAwayListener>

@@ -3,7 +3,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Typography, LinearProgress, Box, Tooltip } from "@mui/material";
-import BasicCard from "@/components/cards/BasicCard";
+import CardWithBorder from "@/components/cards/CardWithBorder";
 import { useAuthenticatedFetch } from "@/utils/customFetch";
 
 const FsInfoCard = () => {
@@ -69,13 +69,14 @@ const FsInfoCard = () => {
     });
   };
 
-  return (
-    <BasicCard
-      id="fsInfoCard"
-      title="FileSystems"
-      Content={renderFsProgressBars()}
-    />
-  );
+  const data = {
+    title: "FileSystems",
+    stats: (renderFsProgressBars()),
+    avatarIcon: "eos-icons:file-system",
+  };
+
+  return <CardWithBorder {...data} />;
+
 };
 
 export default FsInfoCard;
