@@ -10,10 +10,7 @@ import Link from "next/link";
 import { styled, useTheme } from "@mui/material/styles";
 
 // Component Imports
-import VerticalNav, {
-  NavHeader,
-  NavCollapseIcons,
-} from "@/theme/styles/vertical";
+import VerticalNav, { NavHeader, NavCollapseIcons, } from "@/theme/styles/vertical";
 import VerticalMenu from "./VerticalMenu";
 import Logo from "./Logo";
 
@@ -92,8 +89,8 @@ const Navigation = () => {
       // when semiDark is enabled and the mode is light
       {...(isSemiDark &&
         !isDark && {
-          "data-mui-color-scheme": "dark",
-        })}
+        "data-mui-color-scheme": "dark",
+      })}
     >
       {/* Nav Header including Logo & nav toggle icons  */}
       <NavHeader>

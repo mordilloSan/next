@@ -17,6 +17,7 @@ import useVerticalNav from "../NavBar/useVerticalNav";
 import { useSettings } from "@/hooks/useSettings";
 
 const LogoText = styled.span`
+  margin-right: 10px; /* Added margin-right */
   color: ${({ color }) => color ?? "var(--mui-palette-text-primary)"};
   font-size: 1.25rem;
   line-height: 1.2;
@@ -33,22 +34,13 @@ const LogoText = styled.span`
 `;
 
 const Logo = ({ color }) => {
-  // Refs
   const logoTextRef = useRef(null);
-
-  // Hooks
-  const { isHovered, transitionDuration, isBreakpointReached } =
-    useVerticalNav();
+  const { isHovered, transitionDuration, isBreakpointReached } = useVerticalNav();
   const { settings } = useSettings();
-
-  // Vars
   const { layout } = settings;
 
   useEffect(() => {
-    if (layout !== "collapsed") {
-      return;
-    }
-
+    if (layout !== "collapsed") { return; }
     if (logoTextRef && logoTextRef.current) {
       if (!isBreakpointReached && layout === "collapsed" && !isHovered) {
         logoTextRef.current?.classList.add("hidden");
@@ -61,7 +53,7 @@ const Logo = ({ color }) => {
 
   return (
     <div className="flex items-center min-bs-[24px]">
-      <MaterioLogo className="text-[22px] text-primary" />
+
       <LogoText
         color={color}
         ref={logoTextRef}
@@ -72,6 +64,7 @@ const Logo = ({ color }) => {
       >
         {themeConfig.templateName}
       </LogoText>
+      <MaterioLogo className="text-[22px] text-primary" />
     </div>
   );
 };

@@ -1,49 +1,16 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
-import {  Chip,  Popper,  Fade,  Paper,  ClickAwayListener,  MenuList,  Typography,  Divider,  MenuItem,  Button,} from "@mui/material";
+import { useRef, useState } from "react";
+import { Popper, Fade, Paper, ClickAwayListener, MenuList, Typography, MenuItem } from "@mui/material";
 import { useSettings } from "@/hooks/useSettings";
-import { useAuth } from "@/contexts/AuthContext";
 import Customizer from "@/components/customizer";
+import { Icon } from "@iconify/react";
 
 const SettingsDropdown = () => {
   const [open, setOpen] = useState(false);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
-  const [username, setUsername] = useState("");
   const anchorRef = useRef(null);
-  const { logout } = useAuth();
-
-  // Hooks
   const { settings, updateSettings } = useSettings();
-
-  useEffect(() => {
-    const fetchUsername = () => {
-      const cookieName = "token=";
-      const decodedCookie = decodeURIComponent(document.cookie);
-      const cookieArray = decodedCookie.split(";");
-      let token = "";
-
-      // Find the token cookie
-      cookieArray.forEach((cookie) => {
-        let c = cookie.trim();
-        if (c.indexOf(cookieName) === 0) {
-          token = c.substring(cookieName.length, c.length);
-        }
-      });
-
-      if (token) {
-        try {
-          const parsedToken = JSON.parse(token);
-          setUsername(parsedToken.username || "Username");
-        } catch (error) {
-          console.error("Failed to parse token:", error);
-          setUsername("Username");
-        }
-      }
-    };
-
-    fetchUsername();
-  }, []);
 
   // Update Settings
   const handleChange = (field, value) => {
@@ -69,10 +36,6 @@ const SettingsDropdown = () => {
     setIsCustomizerOpen(false);
   };
 
-  const handleUserLogout = () => {
-    logout();
-  };
-
   const handleModeSwitch = () => {
     updateSettings({ mode: settings.mode === "dark" ? "light" : "dark" });
   };
@@ -96,7 +59,7 @@ const SettingsDropdown = () => {
         onClick={handleDropdownOpen}
         className="cursor-pointer"
       >
-        <i className="ri-settings-4-line" />
+        <Icon icon="ri:settings-4-line" width="22px" height="22px" />
       </div>
       <Popper
         open={open}
@@ -117,16 +80,6 @@ const SettingsDropdown = () => {
             <Paper className="shadow-lg">
               <ClickAwayListener onClickAway={handleDropdownClose}>
                 <MenuList>
-                  <div className="flex items-center py-2 px-4 gap-2">
-                    <Chip
-                      label={username}
-                      size="small"
-                      color="primary"
-                      variant="tonal"
-                      className="self-start rounded-sm"
-                    />
-                  </div>
-                  <Divider className="my-1" />
                   <MenuItem className="gap-3" onClick={handleModeSwitch}>
                     <i className={getModeIcon()} />
                     <Typography color="text.primary">
@@ -145,18 +98,6 @@ const SettingsDropdown = () => {
                     <i className="ri-palette-line" />
                     <Typography color="text.primary">Settings</Typography>
                   </MenuItem>
-                  <div className="flex items-center py-2 px-4">
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      color="error"
-                      size="small"
-                      endIcon={<i className="ri-logout-box-r-line" />}
-                      onClick={handleUserLogout}
-                    >
-                      Logout
-                    </Button>
-                  </div>
                 </MenuList>
               </ClickAwayListener>
             </Paper>

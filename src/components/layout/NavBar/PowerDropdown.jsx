@@ -1,20 +1,45 @@
 "use client";
 
-import { useRef, useState } from "react";
-import {
-  Popper,
-  Fade,
-  Paper,
-  ClickAwayListener,
-  MenuList,
-  MenuItem,
-  Button,
-} from "@mui/material";
+import { useRef, useState, useEffect } from "react";
+import { Popper, Fade, Paper, ClickAwayListener, MenuList, MenuItem, Button, Divider, Chip } from "@mui/material";
 import { Icon } from "@iconify/react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PowerDropdown = () => {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef(null);
+  const { logout } = useAuth();
+  const [username, setUsername] = useState("");
+
+  useEffect(() => {
+    const fetchUsername = () => {
+      const cookieName = "token=";
+      const decodedCookie = decodeURIComponent(document.cookie);
+      const cookieArray = decodedCookie.split(";");
+      let token = "";
+
+      // Find the token cookie
+      cookieArray.forEach((cookie) => {
+        let c = cookie.trim();
+        if (c.indexOf(cookieName) === 0) {
+          token = c.substring(cookieName.length, c.length);
+        }
+      });
+
+      if (token) {
+        try {
+          const parsedToken = JSON.parse(token);
+          setUsername(parsedToken.username || "Username");
+        } catch (error) {
+          console.error("Failed to parse token:", error);
+          setUsername("Username");
+        }
+      }
+    };
+
+    fetchUsername();
+  }, []);
+
 
   const handleDropdownOpen = () => {
     setOpen((prev) => !prev);
@@ -46,6 +71,11 @@ const PowerDropdown = () => {
     }
   };
 
+  // Function to handle logout action
+  const handleUserLogout = () => {
+    logout();
+  };
+
   // Function to handle reboot action
   const handleReboot = async () => {
     try {
@@ -72,7 +102,7 @@ const PowerDropdown = () => {
         onClick={handleDropdownOpen}
         className="cursor-pointer"
       >
-        <Icon icon="mdi:power" width="28px" height="28px" />
+        <Icon icon="mdi:power" width="24x" height="24px" />
       </div>
 
       <Popper
@@ -94,27 +124,52 @@ const PowerDropdown = () => {
             <Paper className="shadow-lg">
               <ClickAwayListener onClickAway={handleDropdownClose}>
                 <MenuList>
-                  {/* Shutdown Button */}
-                  <MenuItem onClick={handleShutdown} className="gap-3">
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      color="error"
+                  <div className="flex items-center py-2 px-4 gap-2">
+                    <Chip
+                      label={username}
                       size="small"
+                      color="primary"
+                      variant="tonal"
+                      className="self-start rounded-sm"
+                    />
+                  </div>
+                  <Divider className="my-1" />
+                  {/* Shutdown Button */}
+                  <MenuItem className="gap-3">
+                    <Button
+                      onClick={handleShutdown}
+                      fullWidth
+                      color="primary"
+                      variant="outlined"
+                      size="small"
+                      endIcon={<i className="ri-shut-down-line" />}
                     >
                       Shutdown
                     </Button>
                   </MenuItem>
                   {/* Reboot Button */}
                   <MenuItem className="gap-3">
-                    <Button
+                  <Button
                       onClick={handleReboot}
-                      fullWidth
-                      variant="contained"
                       color="primary"
+                      fullWidth
+                      variant="text"
                       size="small"
+                      endIcon={<i className="ri-restart-line" />}
                     >
                       Reboot
+                    </Button>
+                  </MenuItem>
+                  {/* LogOut Button */}
+                  <MenuItem className="gap-3">
+                    <Button
+                      onClick={handleUserLogout}
+                      fullWidth
+                      variant="text"
+                      size="small"
+                      endIcon={<i className="ri-logout-box-r-line" />}
+                    >
+                      Logout
                     </Button>
                   </MenuItem>
                 </MenuList>
