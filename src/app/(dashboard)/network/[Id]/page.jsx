@@ -55,19 +55,7 @@ const NetworkDetails = ({ params }) => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <Box
-        mb={1.5}
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        height="100%"
-      >
-        <LoadingIndicator />
-      </Box>
-    );
-  }
+  if (isLoading) {return (<LoadingIndicator />);}
 
   // Filter out the specific network interface details
   const nicDetails = networkDetails?.interfaces?.[name];

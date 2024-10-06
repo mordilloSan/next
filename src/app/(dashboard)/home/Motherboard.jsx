@@ -16,10 +16,6 @@ const MotherBoardInfo = () => {
     refetchInterval: 50000,
   });
 
-  const biosDate = motherboardInfo?.bios?.releaseDate
-    ? new Date(motherboardInfo?.bios?.releaseDate).toLocaleDateString()
-    : "---";
-
   const visibleDetails = motherboardInfo ? (
     <Box sx={{ display: "flex", gap: 1, flexDirection: "column" }}>
       <Typography variant="body1">{`${motherboardInfo?.baseboard?.manufacturer} - ${motherboardInfo?.baseboard?.model}`}</Typography>
@@ -37,7 +33,6 @@ const MotherBoardInfo = () => {
     <CardWithBorder
       title="Motherboard"
       stats={visibleDetails}
-      stats2={visibleDetails}
       icon_text={IconText}
       icon={TemperatureIcon}
       iconProps={{ sx: { color: "grey" } }}

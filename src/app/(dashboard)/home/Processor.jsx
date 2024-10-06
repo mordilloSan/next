@@ -22,10 +22,7 @@ const Processor = () => {
       const model = CPUInfo.cpu.brand
         .replace(/ To Be Filled By O.E.M\./g, "")
         .trim();
-      const maxSpeed = CPUInfo.cpu.speedMax
-        ? `@ ${CPUInfo.cpu.speedMax} MHz`
-        : "";
-      return `${manufacturer} ${model} ${maxSpeed}`;
+      return `${manufacturer} ${model}`;
     }
     return "No data";
   };
@@ -67,7 +64,6 @@ const Processor = () => {
         </Typography>
       </Box>
     ),
-
     icon_text: IconText,
     icon: TemperatureIcon,
     iconProps: { sx: { color: "grey" } },

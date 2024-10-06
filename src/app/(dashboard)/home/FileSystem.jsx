@@ -5,10 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Typography, LinearProgress, Box, Tooltip } from "@mui/material";
 import CardWithBorder from "@/components/cards/CardWithBorder";
 import { useAuthenticatedFetch } from "@/utils/customFetch";
+import LoadingIndicator from "@/components/LoadingIndicator";
 
 const FsInfoCard = () => {
   const customFetch = useAuthenticatedFetch();
-  const { data: fsInfo } = useQuery({
+  const { data: fsInfo, isLoading } = useQuery({
     queryKey: ["fsInfo"],
     queryFn: () => customFetch("/api/storage/filesystems"),
     refetchInterval: 2000,
@@ -71,7 +72,7 @@ const FsInfoCard = () => {
 
   const data = {
     title: "FileSystems",
-    stats: (renderFsProgressBars()),
+    stats: isLoading ? <LoadingIndicator /> : renderFsProgressBars(),
     avatarIcon: "eos-icons:file-system",
   };
 

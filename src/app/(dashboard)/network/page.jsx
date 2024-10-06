@@ -2,20 +2,27 @@
 
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import GenericTable from "@/components/tables/GenericTable";
+import { Grid, Typography } from "@mui/material";
 import { formatDataRate } from "@/utils/formatter";
 import { useAuthenticatedFetch } from "@/utils/customFetch";
-import RouterLink from "@/components/RouterLink";
+import NetworkInterfaceCard from "@/components/cards/NetworkInterfaceCard";
+import LoadingIndicator from "@/components/LoadingIndicator";
 
-const NetworkStatsTable = () => {
+const NetworkStatsCards = () => {
   const customFetch = useAuthenticatedFetch();
-  const { data: networkInfo } = useQuery({
+  const { data: networkInfo, isLoading, error } = useQuery({
     queryKey: ["networkInfo"],
     queryFn: () => customFetch(`/api/network/networkstats`),
     refetchInterval: 1000,
   });
 
-  const rows = networkInfo
+  if (isLoading) {return (<LoadingIndicator />);}
+
+  if (error) {
+    return <Typography>Error loading network interfaces.</Typography>;
+  }
+
+  const interfaces = networkInfo
     ? Object.entries(networkInfo.interfaces)
         .filter(([name, details]) => details.managedByNetworkManager)
         .map(([name, details]) => {
@@ -23,11 +30,7 @@ const NetworkStatsTable = () => {
           const [formattedRxValue, rxUnit] = formatDataRate(details.rxSec || 0);
 
           return {
-            name: (
-              <RouterLink href={`/network/${name}`} passHref>
-                {name}
-              </RouterLink>
-            ),
+            name,
             ipAddress: details.ip4?.map((ip) => ip.address).join(", ") || "N/A",
             tx: formattedTxValue > 0 ? `${formattedTxValue} ${txUnit}` : "N/A",
             rx: formattedRxValue > 0 ? `${formattedRxValue} ${rxUnit}` : "N/A",
@@ -36,40 +39,19 @@ const NetworkStatsTable = () => {
         })
     : [];
 
-  const columns = [
-    {
-      id: "name",
-      label: "Name",
-      accessor: "name",
-      sx: { minWidth: "100px", maxWidth: "100px", textAlign: "left" },
-    },
-    {
-      id: "ipAddress",
-      label: "IP Address",
-      accessor: "ipAddress",
-      sx: { minWidth: "150px", maxWidth: "150px" },
-    },
-    {
-      id: "tx",
-      label: "Tx",
-      accessor: "tx",
-      sx: { minWidth: "100px", maxWidth: "100px", textAlign: "center" },
-    },
-    {
-      id: "rx",
-      label: "Rx",
-      accessor: "rx",
-      sx: { minWidth: "100px", maxWidth: "100px", textAlign: "center" },
-    },
-    {
-      id: "carrierSpeed",
-      label: "Carrier Speed",
-      accessor: "carrierSpeed",
-      sx: { minWidth: "150px" },
-    },
-  ];
+  if (interfaces.length === 0) {
+    return <Typography>No network interfaces available.</Typography>;
+  }
 
-  return <GenericTable title="Interfaces" columns={columns} rows={rows} />;
+  return (
+    <Grid container spacing={2}>
+      {interfaces.map((iface) => (
+        <Grid item xs={12} sm={6} md={4} lg={3} key={iface.name}>
+          <NetworkInterfaceCard {...iface} />
+        </Grid>
+      ))}
+    </Grid>
+  );
 };
 
-export default NetworkStatsTable;
+export default NetworkStatsCards;
