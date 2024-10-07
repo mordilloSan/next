@@ -17,9 +17,14 @@ export const metadata = {
 const RootLayout = ({ children }) => {
   return (
     <html id="__next" lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <title>{metadata.title}</title>
+        <meta name="description" content={metadata.description} />
+      </head>
       <body className="flex is-full min-bs-full flex-auto flex-col">
         <QueryProvider>
-            <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>{children}</AuthProvider>
         </QueryProvider>
       </body>
     </html>
