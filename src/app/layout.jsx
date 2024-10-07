@@ -9,19 +9,16 @@ import "@assets/iconify-icons/generated-icons.css";
 import QueryProvider from "@/components/query";
 import { AuthProvider } from "@/contexts/AuthContext";
 
+
 export const metadata = {
   title: "Linux IO - Linux Server Management Tool",
   description: "Linux Server Management Tool - made with Materio",
+  manifest: "/manifest.json",
 };
 
 const RootLayout = ({ children }) => {
   return (
     <html id="__next" lang="en">
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <title>{metadata.title}</title>
-        <meta name="description" content={metadata.description} />
-      </head>
       <body className="flex is-full min-bs-full flex-auto flex-col">
         <QueryProvider>
           <AuthProvider>{children}</AuthProvider>
