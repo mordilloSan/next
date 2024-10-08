@@ -34,9 +34,9 @@ export const AuthProvider = ({ children }) => {
       await loginService(requestDetails);
       setIsAuthenticated(true);
       setError("");
-      router.push("/home");
+      router.replace("/home");
     } catch (error) {
-      setError(error.message || "Login failed");
+      setError("Login failed");
       setIsAuthenticated(false);
     }
   };
