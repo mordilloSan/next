@@ -57,7 +57,9 @@ router.get('/networkinfo', asyncHandler(async (req, res) => {
     let totalTxSec = 0;
     let totalRxSec = 0;
 
-    const combinedInfo = stats.map(stat => {
+    const combinedInfoMap = new Map();
+
+    stats.forEach(stat => {
       const hw = hardwareInfo.find(hw => hw.logicalname === stat.iface) || {};
       const ipDetails = ipInfo.find(ip => ip.ifname === stat.iface) || {};
       const ip4 = ipDetails.addr_info?.filter(addr => addr.family === "inet") || [];
@@ -72,21 +74,27 @@ router.get('/networkinfo', asyncHandler(async (req, res) => {
         totalRxSec += stat.rx_sec || 0;
       }
 
-      return {
-        iface: stat.iface,
-        operstate: stat.operstate,
-        rx_bytes: stat.rx_bytes,
-        tx_bytes: stat.tx_bytes,
-        rx_sec: stat.rx_sec,
-        tx_sec: stat.tx_sec,
-        vendor: hw.vendor || 'N/A',
-        product: hw.product || 'N/A',
-        description: hw.description || 'N/A',
-        carrierSpeed,
-        ip4: ip4.map(ip => ({ address: ip.local, prefixLength: ip.prefixlen })),
-        ip6: ip6.map(ip => ({ address: ip.local, prefixLength: ip.prefixlen }))
-      };
+      // Add or update the interface information in the map
+      if (!combinedInfoMap.has(stat.iface)) {
+        combinedInfoMap.set(stat.iface, {
+          iface: stat.iface,
+          operstate: stat.operstate,
+          rx_bytes: stat.rx_bytes,
+          tx_bytes: stat.tx_bytes,
+          rx_sec: stat.rx_sec,
+          tx_sec: stat.tx_sec,
+          vendor: hw.vendor || 'N/A',
+          product: hw.product || 'N/A',
+          description: hw.description || 'N/A',
+          carrierSpeed,
+          ip4: ip4.map(ip => ({ address: ip.local, prefixLength: ip.prefixlen })),
+          ip6: ip6.map(ip => ({ address: ip.local, prefixLength: ip.prefixlen })),
+        });
+      }
     });
+
+    // Convert map to array for response
+    const combinedInfo = Array.from(combinedInfoMap.values());
 
     // Add combined TX/RX data to the response
     const response = {

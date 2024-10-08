@@ -33,7 +33,6 @@ const NetworkStatsCards = () => {
     const [formattedTxValue, txUnit] = formatDataRate(details.tx_sec || 0);
     const [formattedRxValue, rxUnit] = formatDataRate(details.rx_sec || 0);
 
-    console.log(details);
     return {
       name: details.iface || "Unknown Interface",
       ipAddress:
@@ -49,10 +48,22 @@ const NetworkStatsCards = () => {
       vendor: details.vendor || "N/A",
       product: details.product || "N/A",
       description: details.description || "N/A",
+      isPhysical: details.description && details.description.toLowerCase().includes('ethernet interface'),
     };
   });
 
-  if (interfaceData.length === 0) {
+  // Sort interfaces: physical NICs first, then alphabetically by name
+  const sortedInterfaces = interfaceData.sort((a, b) => {
+    if (a.isPhysical && !b.isPhysical) {
+      return -1;
+    } else if (!a.isPhysical && b.isPhysical) {
+      return 1;
+    } else {
+      return a.name.localeCompare(b.name);
+    }
+  });
+
+  if (sortedInterfaces.length === 0) {
     return <Typography>No network interfaces available.</Typography>;
   }
 
@@ -62,7 +73,7 @@ const NetworkStatsCards = () => {
         Total TX: {formattedTotalTxValue} {totalTxUnit}, Total RX: {formattedTotalRxValue} {totalRxUnit}
       </Typography>
       <Grid container spacing={2}>
-        {interfaceData.map((iface) => (
+        {sortedInterfaces.map((iface) => (
           <Grid item xs={12} sm={6} md={4} lg={3} key={iface.name}>
             <NetworkInterfaceCard {...iface} />
           </Grid>
