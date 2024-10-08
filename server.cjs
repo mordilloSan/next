@@ -16,6 +16,7 @@ const wireguardRoutes = require('./server/wireguard.cjs');
 const { app: dockerRoutes, downloadIcons } = require("./server/docker.cjs");
 
 const dev = process.env.NODE_ENV !== 'production';
+const port = dev ? 3001 : 3000;
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
@@ -73,9 +74,9 @@ app.prepare().then(async () => {
       return;
     }
     const https = require('https');
-    https.createServer({ key: keys.serviceKey, cert: keys.certificate }, server).listen(3000, (err) => {
+    https.createServer({ key: keys.serviceKey, cert: keys.certificate }, server).listen(port , (err) => {
       if (err) throw err;
-      console.log('> Ready on https://localhost:3000');
+      console.log(`> Ready on https://localhost:${port}`);
     });
   });
 });
