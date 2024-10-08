@@ -8,7 +8,7 @@ const pem = require('pem');
 const { router: loginRoutes, isAuthenticated } = require("./server/auth.cjs");
 const { server: updateRoutes, cacheUpdateHistory } = require('./server/update.cjs');
 const storageRoutes = require('./server/storage.cjs');
-const networkRoutes = require('./server/network.cjs');
+const {router: networkRoutes, initNetworkStats} = require('./server/network.cjs');
 const { router: systemRoutes, cacheServiceDescriptions } = require('./server/systemstatus.cjs');
 const systemInfoRoutes = require('./server/systeminfo.cjs');
 const powerRoutes = require('./server/power.cjs');
@@ -45,7 +45,7 @@ app.prepare().then(async () => {
   server.use("/api", loginRoutes);
   server.use("/api/updates", isAuthenticated, updateRoutes);
   server.use("/api/storage", isAuthenticated, storageRoutes);
-  server.use("/api/network", isAuthenticated, networkRoutes);
+  server.use("/api/network", networkRoutes);
   server.use("/api/system-status", isAuthenticated, systemRoutes);
   server.use('/api/systeminfo', isAuthenticated, systemInfoRoutes);
   server.use('/api/power', isAuthenticated, powerRoutes);
@@ -58,6 +58,7 @@ app.prepare().then(async () => {
     await cacheServiceDescriptions();
     await cacheUpdateHistory();
     await downloadIcons();
+    await initNetworkStats();
   } catch (error) {
     console.error('Startup task failed:', error);
     process.exit(1); // Exit if critical startup tasks fail
@@ -71,7 +72,6 @@ app.prepare().then(async () => {
     if (err) {
       console.error('Error generating self-signed certificate', err);
       process.exit(1);
-      return;
     }
     const https = require('https');
     https.createServer({ key: keys.serviceKey, cert: keys.certificate }, server).listen(port , (err) => {
