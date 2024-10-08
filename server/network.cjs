@@ -50,41 +50,43 @@ router.get('/networkinfo', asyncHandler(async (req, res) => {
     const hardwareInfo = JSON.parse(hardwareData);
     const ipInfo = JSON.parse(ipData);
 
+    // Get carrier speeds for managed interfaces
+    const carrierSpeeds = await getCarrierSpeeds(managedInterfaces);
+
     // Step 4: Combine all information and calculate totals for physical NICs
     let totalTxSec = 0;
     let totalRxSec = 0;
 
-    const combinedInfo = await Promise.all(
-      stats.map(stat => {
-        const hw = hardwareInfo.find(hw => hw.logicalname === stat.iface) || {};
-        const ipDetails = ipInfo.find(ip => ip.ifname === stat.iface) || {};
-        const ip4 = ipDetails.addr_info?.filter(addr => addr.family === "inet") || [];
-        const ip6 = ipDetails.addr_info?.filter(addr => addr.family === "inet6") || [];
+    const combinedInfo = stats.map(stat => {
+      const hw = hardwareInfo.find(hw => hw.logicalname === stat.iface) || {};
+      const ipDetails = ipInfo.find(ip => ip.ifname === stat.iface) || {};
+      const ip4 = ipDetails.addr_info?.filter(addr => addr.family === "inet") || [];
+      const ip6 = ipDetails.addr_info?.filter(addr => addr.family === "inet6") || [];
 
-        const carrierSpeed = getCarrierSpeeds(stat.iface);
+      const carrierSpeedInfo = carrierSpeeds.find(cs => cs.iface === stat.iface);
+      const carrierSpeed = carrierSpeedInfo ? carrierSpeedInfo.carrierSpeed : 'N/A';
 
-        // Sum up tx_sec and rx_sec for physical NICs
-        if (hw.description && !hw.description.includes('virtual')) {
-          totalTxSec += stat.tx_sec || 0;
-          totalRxSec += stat.rx_sec || 0;
-        }
+      // Sum up tx_sec and rx_sec for physical NICs
+      if (hw.description && !hw.description.includes('virtual')) {
+        totalTxSec += stat.tx_sec || 0;
+        totalRxSec += stat.rx_sec || 0;
+      }
 
-        return {
-          iface: stat.iface,
-          operstate: stat.operstate,
-          rx_bytes: stat.rx_bytes,
-          tx_bytes: stat.tx_bytes,
-          rx_sec: stat.rx_sec,
-          tx_sec: stat.tx_sec,
-          vendor: hw.vendor || 'N/A',
-          product: hw.product || 'N/A',
-          description: hw.description || 'N/A',
-          carrierSpeed,
-          ip4: ip4.map(ip => ({ address: ip.local, prefixLength: ip.prefixlen })),
-          ip6: ip6.map(ip => ({ address: ip.local, prefixLength: ip.prefixlen }))
-        };
-      })
-    );
+      return {
+        iface: stat.iface,
+        operstate: stat.operstate,
+        rx_bytes: stat.rx_bytes,
+        tx_bytes: stat.tx_bytes,
+        rx_sec: stat.rx_sec,
+        tx_sec: stat.tx_sec,
+        vendor: hw.vendor || 'N/A',
+        product: hw.product || 'N/A',
+        description: hw.description || 'N/A',
+        carrierSpeed,
+        ip4: ip4.map(ip => ({ address: ip.local, prefixLength: ip.prefixlen })),
+        ip6: ip6.map(ip => ({ address: ip.local, prefixLength: ip.prefixlen }))
+      };
+    });
 
     // Add combined TX/RX data to the response
     const response = {

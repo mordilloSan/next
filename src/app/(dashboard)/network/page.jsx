@@ -33,6 +33,7 @@ const NetworkStatsCards = () => {
     const [formattedTxValue, txUnit] = formatDataRate(details.tx_sec || 0);
     const [formattedRxValue, rxUnit] = formatDataRate(details.rx_sec || 0);
 
+    console.log(details);
     return {
       name: details.iface || "Unknown Interface",
       ipAddress:
