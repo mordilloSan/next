@@ -12,45 +12,62 @@ const NetworkStatsCards = () => {
   const customFetch = useAuthenticatedFetch();
   const { data: networkInfo, isLoading, error } = useQuery({
     queryKey: ["networkInfo"],
-    queryFn: () => customFetch(`/api/network/networkstats`),
+    queryFn: () => customFetch(`/api/network/networkinfo`),
     refetchInterval: 1000,
   });
 
-  if (isLoading) {return (<LoadingIndicator />);}
+  if (isLoading) {
+    return <LoadingIndicator />;
+  }
 
   if (error) {
     return <Typography>Error loading network interfaces.</Typography>;
   }
 
-  const interfaces = networkInfo
-    ? Object.entries(networkInfo.interfaces)
-        .filter(([name, details]) => details.managedByNetworkManager)
-        .map(([name, details]) => {
-          const [formattedTxValue, txUnit] = formatDataRate(details.txSec || 0);
-          const [formattedRxValue, rxUnit] = formatDataRate(details.rxSec || 0);
+  const { totalTxSec = 0, totalRxSec = 0, interfaces = [] } = networkInfo || {};
 
-          return {
-            name,
-            ipAddress: details.ip4?.map((ip) => ip.address).join(", ") || "N/A",
-            tx: formattedTxValue > 0 ? `${formattedTxValue} ${txUnit}` : "N/A",
-            rx: formattedRxValue > 0 ? `${formattedRxValue} ${rxUnit}` : "N/A",
-            carrierSpeed: details.carrierSpeed || "N/A",
-          };
-        })
-    : [];
+  const [formattedTotalTxValue, totalTxUnit] = formatDataRate(totalTxSec);
+  const [formattedTotalRxValue, totalRxUnit] = formatDataRate(totalRxSec);
 
-  if (interfaces.length === 0) {
+  const interfaceData = interfaces.map((details) => {
+    const [formattedTxValue, txUnit] = formatDataRate(details.tx_sec || 0);
+    const [formattedRxValue, rxUnit] = formatDataRate(details.rx_sec || 0);
+
+    return {
+      name: details.iface || "Unknown Interface",
+      ipAddress:
+        (Array.isArray(details.ip4) && details.ip4.length > 0
+          ? details.ip4.map((ip) => ip.address).join(", ")
+          : null) ||
+        (Array.isArray(details.ip6) && details.ip6.length > 0
+          ? details.ip6.map((ip) => ip.address).join(", ")
+          : "N/A"),
+      tx: formattedTxValue > 0 ? `${formattedTxValue} ${txUnit}` : "N/A",
+      rx: formattedRxValue > 0 ? `${formattedRxValue} ${rxUnit}` : "N/A",
+      carrierSpeed: details.carrierSpeed ? `${details.carrierSpeed}` : "N/A",
+      vendor: details.vendor || "N/A",
+      product: details.product || "N/A",
+      description: details.description || "N/A",
+    };
+  });
+
+  if (interfaceData.length === 0) {
     return <Typography>No network interfaces available.</Typography>;
   }
 
   return (
-    <Grid container spacing={2}>
-      {interfaces.map((iface) => (
-        <Grid item xs={12} sm={6} md={4} lg={3} key={iface.name}>
-          <NetworkInterfaceCard {...iface} />
-        </Grid>
-      ))}
-    </Grid>
+    <>
+      <Typography variant="h6" gutterBottom>
+        Total TX: {formattedTotalTxValue} {totalTxUnit}, Total RX: {formattedTotalRxValue} {totalRxUnit}
+      </Typography>
+      <Grid container spacing={2}>
+        {interfaceData.map((iface) => (
+          <Grid item xs={12} sm={6} md={4} lg={3} key={iface.name}>
+            <NetworkInterfaceCard {...iface} />
+          </Grid>
+        ))}
+      </Grid>
+    </>
   );
 };
 

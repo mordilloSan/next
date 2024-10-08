@@ -113,8 +113,8 @@ const chartOptions = {
 const NetworkActivityChart = () => {
   const customFetch = useAuthenticatedFetch();
   const { data, error, isLoading } = useQuery({
-    queryKey: ["networkStats"],
-    queryFn: () => customFetch("/api/network/networkstats"),
+    queryKey: ["networkInfo"],
+    queryFn: () => customFetch("/api/network/networkinfo"),
     refetchInterval: 1000,
   });
 

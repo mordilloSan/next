@@ -45,7 +45,7 @@ app.prepare().then(async () => {
   server.use("/api", loginRoutes);
   server.use("/api/updates", isAuthenticated, updateRoutes);
   server.use("/api/storage", isAuthenticated, storageRoutes);
-  server.use("/api/network", networkRoutes);
+  server.use("/api/network", isAuthenticated, networkRoutes);
   server.use("/api/system-status", isAuthenticated, systemRoutes);
   server.use('/api/systeminfo', isAuthenticated, systemInfoRoutes);
   server.use('/api/power', isAuthenticated, powerRoutes);
